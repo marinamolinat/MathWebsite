@@ -1,0 +1,45 @@
+nav {
+   
+    background-color: #ffff9c;
+    height: 40px;
+    color: #266943;
+}
+
+nav ul {
+    list-style-type: none;
+    display: flex;
+    justify-content: space-around;
+    margin: 0;      
+    padding: 0; 
+    align-items: center;
+    height: 100%;
+    
+}
+
+body {
+
+    padding: 0px;
+    margin: 0px;
+    background-color: #266943;
+    color: #ffff9c;
+    font-family: "Figtree", sans-serif;
+}
+
+a {
+  text-decoration: none;
+  color: inherit; 
+}
+
+#center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 65vh;
+    color: #266943;
+    background-color:  hsl(60, 54%, 88%);
+    
+}
+h1 {
+    font-size: 3em;
+    margin: 0;
+}
