@@ -36,10 +36,14 @@ a {
     align-items: center;
     height: 65vh;
     color: #266943;
-    background-color:  hsl(60, 54%, 88%);
+    background-color:  hsl(60, 45%, 92%);
     
 }
 h1 {
     font-size: 3em;
     margin: 0;
+}
+
+section{
+    padding: 20px;
 }
