@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, sessions
+from flask import Flask, render_template, request, sessions, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 import sqlite3
+
 
 
 def init_db():
@@ -22,6 +23,15 @@ def add_student(student_id, name):
     connection.commit()
     connection.close()
 
+def does_student_exist(student_id):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+
+    cursor.execute('SELECT * FROM students WHERE id = ?', (student_id,))
+    student = cursor.fetchone()
+
+    connection.close()
+    return student is not None
 
 
 app = Flask(__name__)
@@ -32,21 +42,32 @@ app.secret_key = "will change this later lol"
 def index():
     return render_template('index.html')
 
-@app.route('/login', methods=['GET'])
+@app.route('/login', methods=['POST', 'GET'])
 def login():
-    myname = request.args.get('name')
-    if myname is None:
-        myname = "Guest"
-    
-    return render_template('login.html', name=myname)
+    if request.method == "GET": 
+        return render_template('login.html')
+    else:
+        id = request.form.get('username')
+
+        #check if pk is not in the database
+        if does_student_exist(id): 
+            print("back")
+            return redirect(url_for('dashboard', name=id, back=True))
+        
+        else: 
+            print("new")
+            add_student(id, "test")
+            return redirect(url_for('dashboard', name=id, back=False))
+        
 
 
 #restricted (jk its not)
-@app.route('/secret', methods=['POST'])
-def secret ():
-    name = request.form.get('username', "idk")
-    password = request.form.get('password', "idk")
-    return render_template('secret.html', name=name, password=password)
+@app.route('/dashboard')
+def dashboard():
+    back = request.args.get("back") == "True"
+
+    return render_template('dashboard.html', name=request.args.get("name"), back=back)
+   
 
 if __name__ == "__main__":
     init_db()
