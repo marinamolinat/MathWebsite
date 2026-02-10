@@ -3,15 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>wooo secret</title>
+     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Dashboard</title>
+    <style>
+        body {
+           
+            display: flex;
+        }
+
+        nav {
+      
+            padding: 10px;
+
+            height: 100%;
+            background-color: aqua;
+            border-radius: 5px;
+
+        }
+
+        #welcome {
+            padding: 25px;
+       
+        
+        }
+
+        ul {
+            display: flex;
+            flex-direction: column;
+        }
+
+
+
+    </style>
+
+
+
 </head>
 <body>
-    <h1> hello {{name}} </h1>
-    <p> {% if back %}
-        welcome back!
+   <nav>
+    <ul class="nav">
+    <li><a href="default.asp">Home</a></li>
+    <li><a href="news.asp">News</a></li>
+    <li><a href="contact.asp">Contact</a></li>
+    <li><a href="about.asp">Logout</a></li>
+    </ul>
 
-        
-    {% endif %}
+
+   </nav>
+
+
+
+
+
+    <div id="welcome"> 
+        <h1> Hello {{name}} </h1>
+        <p> {% if back %}
+            welcome back!
+        {% endif %} 
+        </p>
+
+
+    </div>
+    
+    
 
 
 
