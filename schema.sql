@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT PRIMARY KEY,
     firstName TEXT NOT NULL, 
     firstLastName TEXT NOT NULL, 
-    secondLastName TEXT NOT NULL
+    secondLastName TEXT
 
 );
 

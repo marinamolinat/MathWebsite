@@ -54,7 +54,7 @@ def add_student(email, firstName, lastName, grade):
     lastNames = lastName.split(" ")
 
     if len(lastNames) == 1: #if they only have one last name
-        cursor.execute('INSERT INTO users (email, firstName, firstLastName, ) VALUES (?, ?, ?)', (email, firstName, lastNames[0]))
+        cursor.execute('INSERT INTO users (email, firstName, firstLastName) VALUES (?, ?, ?)', (email, firstName, lastNames[0]))
     else: 
         cursor.execute('INSERT INTO users (email, firstName, firstLastName, secondLastName) VALUES (?, ?, ?, ?)', (email, firstName, lastNames[0], lastNames[1]))
     
@@ -103,6 +103,9 @@ def oauth():
     return redirect(authorization_url)
 
 
+
+
+
 @app.route('/callback')
 def callback():
 
@@ -129,11 +132,14 @@ def callback():
     
     session["id"] = id_info.get("sub")
     session["email"] = id_info.get("email")
+    session["firstName"] = id_info.get("given_name")
+    session["lastName"] = id_info.get("family_name")
 
 
     #See if the student is new exists in the database. i.e. they are a student and need to "onboard"
     if not does_user_exist(session["email"]):
-        add_student(session["email"], id_info.get("given_name"), id_info.get("family_name"), 8)
+        return redirect(url_for('onboard'))
+
     
    
 
@@ -144,13 +150,21 @@ def callback():
     return redirect(url_for('dashboard'))
 
 
-        
+@app.route('/onboard', methods=['GET' , 'POST'])
+@login_required
+def onboard():
+    if request.method == 'POST':
+        grade = request.form.get('grade')
+        add_student(session["email"], session["firstName"], session["lastName"], grade)
+        return redirect(url_for('dashboard'))
+
+    return render_template('onboard.html', firstName=session['firstName'])
 
 
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('dashboard.html', name=session['name'])
+    return render_template('dashboard.html', name=session['firstName'])
 
 
 
