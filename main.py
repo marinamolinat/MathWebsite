@@ -12,13 +12,13 @@ from pip._vendor import cachecontrol
 import json
 
 
+
+#Some things for google oauth 
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-
-
 SCOPE = ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"]
 client_secrets_file = os.path.join(pathlib.Path(__file__).parent, "secret.json")
 
-flow = Flow.from_client_secrets_file(client_secrets_file="secret.json", scopes=SCOPE, redirect_uri="http://localhost:8000/callback")
+flow = Flow.from_client_secrets_file(client_secrets_file="secret.json", scopes=SCOPE, redirect_uri="http://127.0.0.1:8000/callback")
 
 with open("secret.json", "r") as f:
     data = json.load(f)
@@ -26,17 +26,17 @@ with open("secret.json", "r") as f:
     
 
 
-
-
+#login required decorator 
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if "user" not in session:
+        if "id" not in session:
             abort(401)
         return f(*args, **kwargs)
     return decorated
 
 
+#Database functions
 def init_db():
     connection = sqlite3.connect('database.db')
 
@@ -46,38 +46,51 @@ def init_db():
     connection.commit()
     connection.close()
 
-
-def add_student(student_id, name):
+def add_student(email, firstName, lastName, grade):
     connection = sqlite3.connect('database.db')
     cursor = connection.cursor()
 
-    cursor.execute('INSERT INTO students (id, name) VALUES (?, ?)', (student_id, name))
+    #break last name into first and second last name (if applicable)
+    lastNames = lastName.split(" ")
+
+    if len(lastNames) == 1: #if they only have one last name
+        cursor.execute('INSERT INTO users (email, firstName, firstLastName, ) VALUES (?, ?, ?)', (email, firstName, lastNames[0]))
+    else: 
+        cursor.execute('INSERT INTO users (email, firstName, firstLastName, secondLastName) VALUES (?, ?, ?, ?)', (email, firstName, lastNames[0], lastNames[1]))
+    
+    #now student table
+    cursor.execute('INSERT INTO students (email, grade) VALUES (?, ?)', (email, grade))
 
     connection.commit()
     connection.close()
 
-def does_student_exist(student_id):
+def does_user_exist(email): 
     connection = sqlite3.connect('database.db')
     cursor = connection.cursor()
 
-    cursor.execute('SELECT * FROM students WHERE id = ?', (student_id,))
+    cursor.execute('SELECT * FROM users WHERE email = ?', (email, ))
     student = cursor.fetchone()
 
     connection.close()
     return student is not None
 
 
+
+
+
 app = Flask(__name__)
 app.secret_key = "will change this later lol"
 
 
+
+#Routes
 @app.route('/')
 def index():
     return render_template('index.html')
 
 
-@app.route('/about')
-def about():
+@app.route('/oauth')
+def oauth():
     
     authorization_url, state = flow.authorization_url(
         access_type="offline",
@@ -87,21 +100,19 @@ def about():
     # Save state in session to verify the callback
     session["state"] = state
 
-    print("state: ", session["state"])
     return redirect(authorization_url)
 
 
 @app.route('/callback')
 def callback():
 
-    print(session)
     flow.fetch_token(authorization_response=request.url)
     if "state" not in session or "state" not in request.args:
         abort(400)  # Bad request, missing state
 
 
     if not session["state"] == request.args["state"]:
-        abort(500)  # State does not match!
+        abort(500)  # State does not match
 
     credentials = flow.credentials
     request_session = requests.session()
@@ -114,43 +125,32 @@ def callback():
         audience=GOOGLE_CLIENT_ID
     )
 
-    session["google_id"] = id_info.get("sub")
-    session["name"] = id_info.get("name")
-    return redirect("/")
+    
+    
+    session["id"] = id_info.get("sub")
+    session["email"] = id_info.get("email")
 
 
-@app.route('/login', methods=['POST', 'GET'])
-def login():
+    #See if the student is new exists in the database. i.e. they are a student and need to "onboard"
+    if not does_user_exist(session["email"]):
+        add_student(session["email"], id_info.get("given_name"), id_info.get("family_name"), 8)
+    
+   
 
-    if request.method == "GET": 
-        return render_template('login.html')
-    else:
 
 
-        id = request.form.get('username')
 
-        session["user"] = id
 
-        #check if pk is not in the database
-        if does_student_exist(id): 
-            print("back")
-            return redirect(url_for('dashboard', name=id, back=True))
+    return redirect(url_for('dashboard'))
+
+
         
-        else: 
-            print("new")
-            add_student(id, "test")
-            return redirect(url_for('dashboard', name=id, back=False))
-        
-
 
 
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    back = request.args.get("back") == "True"
-
-
-    return render_template('dashboard.html', name=request.args.get("name"), back=back)
+    return render_template('dashboard.html', name=session['name'])
 
 
 
@@ -161,5 +161,5 @@ def logout():
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="http://localhost/", port=8000, debug=True)
+    app.run(host="127.0.0.1", port=8000, debug=True)
 
