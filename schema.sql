@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS students (
     email TEXT PRIMARY KEY,
     grade INTEGER NOT NULL CHECK (grade IN (5, 6, 7, 8, 9, 10, 11)),
+    house TEXT NOT NULL CHECK (house IN ('Hood', 'Beatty', 'Nelson', 'Rodney')),
     FOREIGN KEY (email) REFERENCES users(email) ON DELETE CASCADE
 );
 

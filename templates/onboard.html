@@ -9,7 +9,8 @@
     <h1>Welcome {{firstName}}!</h1>
     <form method="post">
         
-        <select name="grade">
+        <select name="grade" required>
+        <option value="" disabled selected>Select Grade</option>
         <option value="5">5</option>
         <option value="6">6</option>
          <option value="7">7</option>
@@ -21,7 +22,8 @@
         </select>
 
          
-        <select name="house">
+        <select name="house" required>
+        <option value="" disabled selected>Select House</option>
         <option value="Hood">Hood</option>
         <option value="Rodney">Rodney</option>
          <option value="Beatty">Beatty</option>

@@ -46,7 +46,7 @@ def init_db():
     connection.commit()
     connection.close()
 
-def add_student(email, firstName, lastName, grade):
+def add_student(email, firstName, lastName, grade, house):
     connection = sqlite3.connect('database.db')
     cursor = connection.cursor()
 
@@ -59,7 +59,7 @@ def add_student(email, firstName, lastName, grade):
         cursor.execute('INSERT INTO users (email, firstName, firstLastName, secondLastName) VALUES (?, ?, ?, ?)', (email, firstName, lastNames[0], lastNames[1]))
     
     #now student table
-    cursor.execute('INSERT INTO students (email, grade) VALUES (?, ?)', (email, grade))
+    cursor.execute('INSERT INTO students (email, grade, house) VALUES (?, ?, ?)', (email, grade, house))
 
     connection.commit()
     connection.close()
@@ -155,7 +155,8 @@ def callback():
 def onboard():
     if request.method == 'POST':
         grade = request.form.get('grade')
-        add_student(session["email"], session["firstName"], session["lastName"], grade)
+        house = request.form.get('house')
+        add_student(session["email"], session["firstName"], session["lastName"], grade, house)
         return redirect(url_for('dashboard'))
 
     return render_template('onboard.html', firstName=session['firstName'])
