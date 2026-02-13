@@ -134,6 +134,7 @@ def callback():
     session["email"] = id_info.get("email")
     session["firstName"] = id_info.get("given_name")
     session["lastName"] = id_info.get("family_name")
+    session["picture"] = id_info.get("picture")
 
 
     #See if the student is new exists in the database. i.e. they are a student and need to "onboard"
@@ -165,7 +166,17 @@ def onboard():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('dashboard.html', name=session['firstName'])
+    return render_template('dashboard.html', name=session['firstName'], profilePic=session['picture'])
+
+@login_required
+@app.route('/resources')
+def resources():
+    return render_template('resources.html', name=session['firstName'])
+
+@login_required
+@app.route('/leaderboard')
+def leaderboard():
+    return render_template('leaderboard.html', name=session['firstName'])
 
 
 

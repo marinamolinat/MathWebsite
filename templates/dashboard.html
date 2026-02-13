@@ -1,20 +1,70 @@
 {% extends "base.html" %}
 {% block styles %}
     <style>
-        body {
-           
+
+        #top {
             display: flex;
+            justify-content: space-between;
+         
+        }
+
+        #profilePic {
+            width: 100px; 
+            height: 100x; 
+            border-radius: 20%;
+   
+            margin-right: 25px;
+            margin-top: 5px
+
+        }
+
+        .containerProblems {
+            color: #266943;
+            
+            background-color: #79bd95;
+            height: 100px;
+            width: 45%;
+            border-radius: 10px;
+            padding: 10px;
+            height: 330px;
+        }
+
+        .capsuleProblems {
+            overflow-y: scroll;
+            height: 70%;
+            padding: 20px;
+
+            background-color: rgba(126, 216, 174, 0.5);
+            border-radius: 10px;
+
         }
 
 
-        #welcome {
-            padding: 25px;
-       
+
+        .listProblems li {
+            width: 100%;
+            border-radius: 10px;
+            padding: 10px; 
+            background-color: #ffff9c43;;
+            color: #266943;
+            
+            
+            
+        }
+        .listProblems{
+        
+           display: flex;
+           flex-direction: column;
+           gap: 10px;
+            padding-left: 0;
+
         
         }
 
        
+            
 
+    
         
     </style>
 {% endblock %}
@@ -23,9 +73,73 @@
 
 
 {% block content %}
-    <div id="welcome"> 
+    <div id="top"> 
         <h1> Hello {{name}} </h1>
+         <img  src="{{ profilePic }}" alt="Profile Picture" id="profilePic">
     </div>
+    
+
+    <div style="display: flex; justify-content: space-around; margin: 50px;">
+        <div class="containerProblems"> 
+        <h2> Active Problems </h2>
+        <p>These are the problems for you grade that are currently active</p>
+
+         <div class="capsuleProblems"> 
+            <ul class="listProblems">
+                <li><a href="#">Action</a></li>
+                <li><a href="#">Another action</a></li>
+                <li><a href="#">Something else here</a></li>
+
+
+                 <li><a href="#">Action</a></li>
+                <li><a href="#">Another action</a></li>
+                <li><a href="#">Something else here</a></li>
+
+                 <li><a href="#">Action</a></li>
+                <li><a href="#">Another action</a></li>
+                <li><a href="#">Something else here</a></li>
+            </ul>
+
+         </div>
+                   
+            
+
+     
+        </div>
+        <div  class="containerProblems"> 
+            <h2> Past Problems </h2>
+
+            <p>These are some past problems you have done</p>
+
+            <div class="capsuleProblems"> 
+                <ul class="listProblems">
+                    <li><a href="#">Action</a></li>
+                    <li><a href="#">Another action</a></li>
+                    <li><a href="#">Something else here</a></li>
+
+
+                    <li><a href="#">Action</a></li>
+                    <li><a href="#">Another action</a></li>
+                    <li><a href="#">Something else here</a></li>
+
+                    <li><a href="#">Action</a></li>
+                    <li><a href="#">Another action</a></li>
+                    <li><a href="#">Something else here</a></li>
+                </ul>
+
+             </div>
+                   
+
+        </div>
+
+        
+    
+    
+    </div>
+    
+   
+    
+
 {% endblock %}
 
 

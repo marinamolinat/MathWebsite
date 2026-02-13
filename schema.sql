@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS admins (
 
 CREATE TABLE IF NOT EXISTS mathProblems (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
     writtenQuestion TEXT,
     imageCDN TEXT, 
     correctAnswer TEXT,
