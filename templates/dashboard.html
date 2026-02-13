@@ -1,27 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-     <link href="https://fonts.googleapis.com/css2?family=Figtree&display=swap" rel="stylesheet">
-
-    <title>Dashboard</title>
+{% extends "base.html" %}
+{% block styles %}
     <style>
         body {
            
             display: flex;
         }
 
-        nav {
-      
-            padding: 10px;
-
-            height: 100%;
-            background-color: aqua;
-            border-radius: 5px;
-
-        }
 
         #welcome {
             padding: 25px;
@@ -29,46 +13,20 @@
         
         }
 
-        ul {
-            display: flex;
-            flex-direction: column;
-        }
+       
 
-
-
+        
     </style>
-
-
-
-</head>
-<body>
-   <nav>
-    <ul class="nav">
-    <li><a href="default.asp">Home</a></li>
-    <li><a href="news.asp">News</a></li>
-    <li><a href="contact.asp">Contact</a></li>
-    <li><a href="/logout">Logout</a></li>
-    </ul>
-
-
-   </nav>
+{% endblock %}
 
 
 
 
-
+{% block content %}
     <div id="welcome"> 
         <h1> Hello {{name}} </h1>
-    
-
-
     </div>
-    
-    
+{% endblock %}
 
 
-
-    </p>
-    
-</body>
-</html>
+ 
