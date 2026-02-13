@@ -25,7 +25,6 @@ CREATE TABLE IF NOT EXISTS mathProblems (
     writtenQuestion TEXT,
     imageCDN TEXT, 
     correctAnswer TEXT,
-    isActive BOOLEAN DEFAULT 1,
     endsAt TIMESTAMP
 );
 

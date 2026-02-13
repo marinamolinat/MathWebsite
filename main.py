@@ -75,7 +75,15 @@ def does_user_exist(email):
     return student is not None
 
 
-
+class Problem(): 
+    def __init__(self, id, title, description, solution):
+        self.id = id
+        self.title = title
+        self.description = description
+        self.solution = solution
+    def getStudentSolutions(self, student):
+        #get the solution that the student submitted for this problem
+        pass #return like a dict with info, ig
 
 
 app = Flask(__name__)
@@ -141,12 +149,6 @@ def callback():
     if not does_user_exist(session["email"]):
         return redirect(url_for('onboard'))
 
-    
-   
-
-
-
-
 
     return redirect(url_for('dashboard'))
 
@@ -177,7 +179,6 @@ def resources():
 @app.route('/leaderboard')
 def leaderboard():
     return render_template('leaderboard.html', name=session['firstName'])
-
 
 
 @app.route('/logout')
