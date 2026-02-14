@@ -1,10 +1,8 @@
 from flask import Flask, render_template, request, session, redirect, url_for, abort
-from flask_sqlalchemy import SQLAlchemy
 import sqlite3
 from functools import wraps
 from google_auth_oauthlib.flow import Flow
 import os
-import pathlib
 import requests
 import google.auth.transport.requests
 from google.oauth2 import id_token
@@ -16,9 +14,9 @@ import time
 
 #Some things for google oauth 
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-SCOPE = ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"]
-client_secrets_file = os.path.join(pathlib.Path(__file__).parent, "secret.json")
 
+
+SCOPE = ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"]
 flow = Flow.from_client_secrets_file(client_secrets_file="secret.json", scopes=SCOPE, redirect_uri="http://127.0.0.1:8000/callback")
 
 with open("secret.json", "r") as f:
@@ -38,6 +36,7 @@ def login_required(f):
 
 
 #Database functions
+
 def init_db():
     connection = sqlite3.connect('database.db')
 
@@ -47,74 +46,89 @@ def init_db():
     connection.commit()
     connection.close()
 
-def add_student(email, firstName, lastName, grade, house):
+
+
+def executeQuery(query, params):
     connection = sqlite3.connect('database.db')
     cursor = connection.cursor()
+    cursor.execute(query, params)
+    result = cursor.fetchall()
+    connection.commit()
+    connection.close()
 
-    #break last name into first and second last name (if applicable)
-    lastNames = lastName.split(" ")
+    return result
 
-    if len(lastNames) == 1: #if they only have one last name
-        cursor.execute('INSERT INTO users (email, firstName, firstLastName) VALUES (?, ?, ?)', (email, firstName, lastNames[0]))
-    else: 
-        cursor.execute('INSERT INTO users (email, firstName, firstLastName, secondLastName) VALUES (?, ?, ?, ?)', (email, firstName, lastNames[0], lastNames[1]))
+
+
+#must mantian tarsncactionality lol
+#list of tuples where each tuple is (query, params)
+def executeQueries(queries):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    result = []
+    for query, params in queries:
+       
+        cursor.execute(query, params)
+        r = cursor.fetchall()
+        result.append(r)
     
-    #now student table
-    cursor.execute('INSERT INTO students (email, grade, house) VALUES (?, ?, ?)', (email, grade, house))
+
 
     connection.commit()
     connection.close()
 
+    return result #returns a list of list of (with tuples) -> ew, i'm aware
+
+
+
+
+def add_student(email, firstName, lastName, grade, house):
+
+    #break last name into first and second last name (if applicable)
+    lastNames = lastName.split(" ")
+    queryList = []
+
+    if len(lastNames) == 1: #if they only have one last name
+      queryList.append(('INSERT INTO users (email, firstName, firstLastName) VALUES (?, ?, ?)', (email, firstName, lastNames[0])))
+    
+    else: 
+       queryList.append(('INSERT INTO users (email, firstName, firstLastName) VALUES (?, ?, ?, ?)', (email, firstName, lastNames[0], lastNames[1])))
+       
+    
+    #now, student table
+    queryList.append(('INSERT INTO students (email, grade, house) VALUES (?, ?, ?)', (email, grade, house)))
+
+    executeQueries(queryList)
+
+
 def does_user_exist(email): 
-    connection = sqlite3.connect('database.db')
-    cursor = connection.cursor()
+    return executeQuery('SELECT * FROM users WHERE email = ?', (email, )) != []
 
-    cursor.execute('SELECT * FROM users WHERE email = ?', (email, ))
-    student = cursor.fetchone()
+def isAdmin(email):
+    return executeQuery('SELECT * FROM admins WHERE email = ?', (email, )) != []
 
-    connection.close()
-    return student is not None
-
-
-class Problem(): 
-    def __init__(self, id, title, description, solution):
-        self.id = id
-        self.title = title
-        self.description = description
-        self.solution = solution
-    def getStudentSolutions(self, student):
-        #get the solution that the student submitted for this problem
-        pass #return like a dict with info, ig
 
 #Get active problems, taking into account the grade of the student.  Returns a list where index 0 represents a list of active problems, and index 1 a list inactive
-def getDashboardProblems(grade): 
-    connection = sqlite3.connect('database.db')
-    connection.row_factory = sqlite3.Row
-    cursor = connection.cursor()
-    problems = []
- 
-    cursor.execute('SELECT id, title FROM mathProblems, mathProblemsGrades where grade = ? and endsAt > ? and id = problemId', (grade, time.time()))
-    problems.append(cursor.fetchall())
-    cursor.execute('SELECT id, title FROM mathProblems, mathProblemsGrades where grade = ? and endsAt <= ? and id = problemId', (grade, time.time()))
-    problems.append(cursor.fetchall())
-    connection.close()
+def getDashboardProblems(grade):
+    result = []
+    r = executeQuery('SELECT id, title FROM mathProblems, mathProblemsGrades where grade = ? and endsAt > ? and id = problemId', (grade, time.time()))
+    result.append(r)
+    r = executeQuery('SELECT id, title FROM mathProblems, mathProblemsGrades where grade = ? and endsAt > ? and id = problemId', (grade, time.time()))
+    result.append(r)
 
+    return result
     
-    return problems
+
 
 def getGrade(email):
-    connection = sqlite3.connect('database.db')
-    cursor = connection.cursor()
-    cursor.execute('SELECT grade FROM students where email = ?', (email, ))
-    return cursor.fetchone()[0]
-
-
-
+    print("mIAIAIAIAIAIAAIAIAIAIIA")
+    print(executeQuery('SELECT grade FROM students where email = ?', (email, )))
+    
+    return executeQuery('SELECT grade FROM students where email = ?', (email, ))[0][0]
 
 
 app = Flask(__name__)
 app.secret_key = "will change this later lol"
-
 
 
 #Routes
@@ -169,13 +183,17 @@ def callback():
     session["firstName"] = id_info.get("given_name")
     session["lastName"] = id_info.get("family_name")
     session["picture"] = id_info.get("picture")
+    session["isAdmin"] = False
   
-
 
     #See if the student is new exists in the database. i.e. they are a student and need to "onboard"
     if not does_user_exist(session["email"]):
         return redirect(url_for('onboard'))
-
+    
+    #see if they are admin: 
+    elif isAdmin(session["email"]):
+        session["isAdmin"] = True
+        return redirect(url_for('adminDashboard'), )
 
     return redirect(url_for('dashboard'))
 
@@ -195,8 +213,20 @@ def onboard():
 @app.route('/dashboard')
 @login_required
 def dashboard():
+
+    #if admin
+    if session["isAdmin"]:
+        return render_template('adminDashboard.html', name=session['firstName'], profilePic=session['picture']) 
+
+
     grade = getGrade(session["email"])
     return render_template('dashboard.html', name=session['firstName'], profilePic=session['picture'], problems=getDashboardProblems(grade))
+
+
+@app.route('/adminDashboard')
+@login_required
+def adminDashboard():
+    return render_template('adminDashboard.html', name=session['firstName'], profilePic=session['picture'])
 
 @login_required
 @app.route('/resources')

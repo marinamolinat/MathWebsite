@@ -14,18 +14,17 @@ CREATE TABLE IF NOT EXISTS students (
 );
 
 CREATE TABLE IF NOT EXISTS admins (
-    email TEXT PRIMARY KEY,
-    granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    email TEXT PRIMARY KEY, 
     FOREIGN KEY (email) REFERENCES users(email) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS mathProblems (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
-    writtenQuestion TEXT,
+    writtenQuestion TEXT NOT NULL,
     imageCDN TEXT, 
     correctAnswer TEXT,
-    endsAt TIMESTAMP
+    endsAt INTEGER NOT NULL
 );
 
 
@@ -42,7 +41,7 @@ CREATE TABLE IF NOT EXISTS studentsAnswers(
     email TEXT,
     answer TEXT NOT NULL,
     scoreReceived INTEGER, 
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+    createdAt INTEGER DEFAULT (strftime('%s', 'now')), 
     PRIMARY KEY (problemId, email)
 );
 
