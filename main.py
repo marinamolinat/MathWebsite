@@ -10,6 +10,7 @@ import google.auth.transport.requests
 from google.oauth2 import id_token
 from pip._vendor import cachecontrol
 import json
+import time
 
 
 
@@ -85,6 +86,31 @@ class Problem():
         #get the solution that the student submitted for this problem
         pass #return like a dict with info, ig
 
+#Get active problems, taking into account the grade of the student.  Returns a list where index 0 represents a list of active problems, and index 1 a list inactive
+def getDashboardProblems(grade): 
+    connection = sqlite3.connect('database.db')
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+    problems = []
+ 
+    cursor.execute('SELECT id, title FROM mathProblems, mathProblemsGrades where grade = ? and endsAt > ? and id = problemId', (grade, time.time()))
+    problems.append(cursor.fetchall())
+    cursor.execute('SELECT id, title FROM mathProblems, mathProblemsGrades where grade = ? and endsAt <= ? and id = problemId', (grade, time.time()))
+    problems.append(cursor.fetchall())
+    connection.close()
+
+    
+    return problems
+
+def getGrade(email):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute('SELECT grade FROM students where email = ?', (email, ))
+    return cursor.fetchone()[0]
+
+
+
+
 
 app = Flask(__name__)
 app.secret_key = "will change this later lol"
@@ -143,6 +169,7 @@ def callback():
     session["firstName"] = id_info.get("given_name")
     session["lastName"] = id_info.get("family_name")
     session["picture"] = id_info.get("picture")
+  
 
 
     #See if the student is new exists in the database. i.e. they are a student and need to "onboard"
@@ -168,7 +195,8 @@ def onboard():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('dashboard.html', name=session['firstName'], profilePic=session['picture'])
+    grade = getGrade(session["email"])
+    return render_template('dashboard.html', name=session['firstName'], profilePic=session['picture'], problems=getDashboardProblems(grade))
 
 @login_required
 @app.route('/resources')

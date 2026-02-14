@@ -86,18 +86,9 @@
 
          <div class="capsuleProblems"> 
             <ul class="listProblems">
-                <li><a href="#">Action</a></li>
-                <li><a href="#">Another action</a></li>
-                <li><a href="#">Something else here</a></li>
-
-
-                 <li><a href="#">Action</a></li>
-                <li><a href="#">Another action</a></li>
-                <li><a href="#">Something else here</a></li>
-
-                 <li><a href="#">Action</a></li>
-                <li><a href="#">Another action</a></li>
-                <li><a href="#">Something else here</a></li>
+              {% for prob in problems[0]%}
+                    <li><a href="/problems/ {{ prob['id'] }}"> {{ prob["title"]}}</a></li>
+                    {% endfor %}
             </ul>
 
          </div>
@@ -113,18 +104,7 @@
 
             <div class="capsuleProblems"> 
                 <ul class="listProblems">
-                    <li><a href="#">Action</a></li>
-                    <li><a href="#">Another action</a></li>
-                    <li><a href="#">Something else here</a></li>
-
-
-                    <li><a href="#">Action</a></li>
-                    <li><a href="#">Another action</a></li>
-                    <li><a href="#">Something else here</a></li>
-
-                    <li><a href="#">Action</a></li>
-                    <li><a href="#">Another action</a></li>
-                    <li><a href="#">Something else here</a></li>
+                    
                 </ul>
 
              </div>
