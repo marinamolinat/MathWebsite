@@ -20,9 +20,7 @@
 
         .containerProblems {
             color: #266943;
-            
             background-color: #79bd95;
-            height: 100px;
             width: 45%;
             border-radius: 10px;
             padding: 10px;
@@ -33,7 +31,6 @@
             overflow-y: scroll;
             height: 70%;
             padding: 20px;
-
             background-color: rgba(126, 216, 174, 0.5);
             border-radius: 10px;
 
@@ -87,8 +84,9 @@
          <div class="capsuleProblems"> 
             <ul class="listProblems">
               {% for prob in problems[0]%}
-                    <li><a href="/problems/ {{ prob['id'] }}"> {{ prob["title"]}}</a></li>
-                    {% endfor %}
+                    <li><a href="/problems/{{prob[0]}}"> {{ prob[1] }}</a></li>
+                    <p>{{ prob[0] }}</p>
+                {% endfor %}
             </ul>
 
          </div>

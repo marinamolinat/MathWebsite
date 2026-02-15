@@ -47,9 +47,15 @@ def init_db():
     connection.close()
 
 
+#dicty --> if you want to return a dictionary instead of a list
+def executeQuery(query, params, dicty=False):
 
-def executeQuery(query, params):
+
     connection = sqlite3.connect('database.db')
+
+    if dicty: 
+        connection.row_factory = sqlite3.Row 
+
     cursor = connection.cursor()
     cursor.execute(query, params)
     result = cursor.fetchall()
@@ -117,7 +123,10 @@ def getDashboardProblems(grade):
     result.append(r)
 
     return result
-    
+
+def getProblem(id): 
+    return executeQuery("SELECT * FROM mathProblems WHERE id = ?;", (id,), True)[0]
+
 
 
 def getGrade(email):
@@ -131,14 +140,11 @@ def addProblem(title, text, file, grades, answer, deadline):
     connection = sqlite3.connect("database.db")
     cursor = connection.cursor()
 
-    cursor.execute("INSERT INTO mathProblems (title, writtenQuestion, imageCDN, correctAnswer, endsAt) VALUES (?, ?, ?, ?, ?)", 
+    cursor.execute("INSERT INTO mathProblems (title, textBody, imageCDN, correctAnswer, endsAt) VALUES (?, ?, ?, ?, ?)", 
     (title, text, file, answer, deadline))
     
     problem_id = cursor.lastrowid
 
-    # Insert into mathProblemsGrades
-    cursor.execute("INSERT INTO mathProblems (title, writtenQuestion, imageCDN, correctAnswer, endsAt) VALUES (?, ?, ?, ?, ?)", 
-    (title, text, file, answer, deadline))
 
     for g in grades:
         cursor.execute("INSERT INTO mathProblemsGrades (problemId, grade) VALUES (?, ?)", (problem_id, g))
@@ -244,7 +250,7 @@ def dashboard():
     return render_template('dashboard.html', name=session['firstName'], profilePic=session['picture'], problems=getDashboardProblems(grade))
 
 
-#
+
 @app.route('/adminDashboard', methods=['GET' , 'POST'])
 @login_required
 def adminDashboard():
@@ -254,17 +260,16 @@ def adminDashboard():
         if request.form.get("formType") == "addProblem":
 
             #CDN for the image
-            file = request.files.get("images")
+            file = request.files.get("image")
+    
+            filename = file.filename.lower()
 
-            if file is not None: 
-
-                #check that file is valid file type :((( i hate validation 
-                filename = file.filename.lower()
+            if filename != "": 
+        
                 if not filename.endswith((".png", ".jpg", ".jpeg")):
                     return "Invalid file type. Only PNG or JPEG allowed.", 400
 
-
-                result = cloudinary.uploader.upload("photo.jpg")
+                result = cloudinary.uploader.upload(file)
                 file = result["secure_url"]
 
 
@@ -275,6 +280,13 @@ def adminDashboard():
 
 
     return render_template('adminDashboard.html', name=session['firstName'], profilePic=session['picture'])
+
+
+
+@app.route("/problems/<int:probId>")
+def problem(probId):
+    return render_template("problems.html", prob=getProblem(probId))
+
 
 @login_required
 @app.route('/resources')
