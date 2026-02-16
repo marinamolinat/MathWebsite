@@ -173,8 +173,20 @@ def getGradesProblem(id):
    return result
 
 
+def canStudentSubmit(id, email):
+
+    #Check that the problem is for the students grade level and hasn't ended 
+    if getGrade(email) in getGradesProblem(id) and getProblem(id)["endsAt"] >= datetime.now().isoformat(timespec='minutes'):
+
+        #check that students has submited
+        if executeQuery("SELECT * FROM studentsAnswers WHERE problemId = ? AND email = ?", (id, email)) != []: 
+            return True
+        
+    return False
 
 
+def studentSubmit(email, problemId, answer):
+    executeQuery("INSERT INTO studentsAnswers (problemId, email, answer) VALUES (?, ?, ?)", (email, problemId, answer))
 
 
 app = Flask(__name__)
@@ -288,13 +300,13 @@ def adminDashboard():
             filename = file.filename.lower()
 
             if filename != "": 
-        
                 if not filename.endswith((".png", ".jpg", ".jpeg")):
                     return "Invalid file type. Only PNG or JPEG allowed.", 400
 
                 result = cloudinary.uploader.upload(file)
                 file = result["secure_url"]
-
+            else:
+                file = None
 
             addProblem(title=request.form.get("title"), text=request.form.get("textbody"), file=file, grades=request.form.getlist("grades"), answer=request.form.get("answer"), deadline=request.form.get("deadline"))
 
@@ -324,11 +336,28 @@ def problem(probId):
         active = True
 
     #Check if user can submit (its for their grade level)
+    validGrade = False
+    print(getGrade(session["email"])) 
     print(getGradesProblem(prob["id"]))
+    if getGrade(session["email"]) in getGradesProblem(prob["id"]):
+        validGrade = True
+
+    return render_template("problems.html", prob=prob, active=active, endsAt=endsAt, validGrade=validGrade)
 
 
 
-    return render_template("problems.html", prob=prob, active=active, endsAt=endsAt)
+@login_required
+@app.route('/problems/<int:probId>/answer', methods=['POST']) 
+def submitProblem(probId):
+
+
+    #Check for all to be valid: 
+    # 1. problem is active and can students submit it based on their grade
+    if canStudentSubmit(probId, session["email"]):
+        studentSubmit(email=session["email"],  problemId=probId, answer=request.form.get("answer"))
+        return render_template("success.html")
+    else: 
+        return "sorry, something went wrong. You can't submit to this problem", 403
 
 
 @login_required

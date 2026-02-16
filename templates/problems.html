@@ -35,7 +35,6 @@
 
 {% block content %}
    <h1>{{ prob["title"]  }}</h1>
-   <p>Problem id: {{ prob["id"] }}</p>
    {% if active %}
         <p>This problem is active until {{ endsAt }} </p>
    {% else %}
@@ -43,15 +42,35 @@
 
    {% endif %}
 
+   {% if not validGrade %}
+   <p>This problem CANNOT be submited for your grade level</p>
+   {% endif %}
+
+
+    {% if prob['imageCDN'] is not none %}
    <div id="imgContainer">
 
     <img src="{{ prob['imageCDN'] }}"/>
 
    </div>
-
-   
+   {% endif %}
 
    <p> {{ prob["textBody"] }}  </p>
+
+   {% if validGrade and active %}
+
+   <form method="post" action="/problems/{{ prob['id'] }}/answer">
+    <label for="inputAnswer">Please input your answer. Do so to 3 decimal places. Do not write anything else, only the answer</label>
+    <input required type="text" id="inputAnswer" name="answer">
+
+
+    
+    <button type="submit" class="btn btn-success" name="formType" value="addProblem">Submit Problem</button>
+
+
+
+   </form>
+   {% endif %}
 
     
 

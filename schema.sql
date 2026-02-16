@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS mathProblems (
     textBody TEXT NOT NULL,
     imageCDN TEXT, 
     correctAnswer TEXT,
-    endsAt INTEGER NOT NULL
+    endsAt TEXT NOT NULL
 );
 
 
@@ -41,7 +41,6 @@ CREATE TABLE IF NOT EXISTS studentsAnswers(
     email TEXT,
     answer TEXT NOT NULL,
     scoreReceived INTEGER, 
-    createdAt INTEGER DEFAULT (strftime('%s', 'now')), 
     PRIMARY KEY (problemId, email)
 );
 

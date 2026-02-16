@@ -59,17 +59,12 @@
         }
         .modal-content {
             background-color: #266943;
-      
-    
-          
-        
+     
         
         }
         
        
-        input {
-            width: 100%;
-        }
+       
 
         textarea {
             width: 100%;
@@ -174,7 +169,7 @@
             <label for="grades">Enter the grade(s) this problem will be showed to</label>
             <div id="gradesContainer">
             
-                {% for i in range(6, 12) %}
+                {% for i in range(5, 12) %}
                     <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="check{{ i }}" name="grades" value="{{ i }}">
                     <label class="form-check-label" for="check{{ i }}">
