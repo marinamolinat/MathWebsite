@@ -8,7 +8,7 @@ import google.auth.transport.requests
 from google.oauth2 import id_token
 from pip._vendor import cachecontrol
 import json
-import time
+from datetime import datetime
 import cloudinary
 import cloudinary.uploader
 from cloudinary.utils import cloudinary_url
@@ -33,11 +33,6 @@ with open("secret.json", "r") as f:
     
 
 
-
-
-
-
-
 #login required decorator 
 def login_required(f):
     @wraps(f)
@@ -49,7 +44,6 @@ def login_required(f):
 
 
 #Database functions
-
 def init_db():
     connection = sqlite3.connect('database.db')
 
@@ -111,7 +105,7 @@ def add_student(email, firstName, lastName, grade, house):
       queryList.append(('INSERT INTO users (email, firstName, firstLastName) VALUES (?, ?, ?)', (email, firstName, lastNames[0])))
     
     else: 
-       queryList.append(('INSERT INTO users (email, firstName, firstLastName) VALUES (?, ?, ?, ?)', (email, firstName, lastNames[0], lastNames[1])))
+       queryList.append(('INSERT INTO users (email, firstName, firstLastName, secondLastName) VALUES (?, ?, ?, ?)', (email, firstName, lastNames[0], lastNames[1])))
        
     
     #now, student table
@@ -126,19 +120,23 @@ def does_user_exist(email):
 def isAdmin(email):
     return executeQuery('SELECT * FROM admins WHERE email = ?', (email, )) != []
 
-
-#Get active problems, taking into account the grade of the student.  Returns a list where index 0 represents a list of active problems, and index 1 a list inactive
+#Get active problems, taking into account the grade of the student. Returns a list where index 0 represents a list of active problems, and index 1 a list inactive
 def getDashboardProblems(grade):
     result = []
-    r = executeQuery('SELECT id, title FROM mathProblems, mathProblemsGrades where grade = ? and endsAt > ? and id = problemId', (grade, time.time()))
+    r = executeQuery('SELECT id, title FROM mathProblems, mathProblemsGrades where grade = ? and endsAt > ? and id = problemId', (grade, datetime.now().isoformat(timespec='minutes')))
     result.append(r)
-    r = executeQuery('SELECT id, title FROM mathProblems, mathProblemsGrades where grade = ? and endsAt > ? and id = problemId', (grade, time.time()))
+    r = executeQuery('SELECT id, title FROM mathProblems, mathProblemsGrades where grade = ? and endsAt > ? and id = problemId', (grade, datetime.now().isoformat(timespec='minutes')))
     result.append(r)
 
     return result
 
 def getProblem(id): 
-    return executeQuery("SELECT * FROM mathProblems WHERE id = ?;", (id,), True)[0]
+    result = executeQuery("SELECT * FROM mathProblems WHERE id = ?;", (id,), True)
+    if result == []:
+        return None
+ 
+
+    return result[0]
 
 
 
@@ -147,14 +145,14 @@ def getGrade(email):
 
 def addProblem(title, text, file, grades, answer, deadline): 
 
+
     if answer == "":
         answer = None
 
     connection = sqlite3.connect("database.db")
     cursor = connection.cursor()
 
-    cursor.execute("INSERT INTO mathProblems (title, textBody, imageCDN, correctAnswer, endsAt) VALUES (?, ?, ?, ?, ?)", 
-    (title, text, file, answer, deadline))
+    cursor.execute("INSERT INTO mathProblems (title, textBody, imageCDN, correctAnswer, endsAt) VALUES (?, ?, ?, ?, ?)", (title, text, file, answer, deadline))
     
     problem_id = cursor.lastrowid
 
@@ -164,6 +162,18 @@ def addProblem(title, text, file, grades, answer, deadline):
 
     connection.commit()
     connection.close()
+
+def getGradesProblem(id):
+   r = executeQuery("SELECT grade from mathProblemsGrades WHERE problemId = ?", (id,))
+   #convert it to a list of grades instead of a list of list
+   result = []
+   for i in r: 
+    result.append(i[0])
+
+   return result
+
+
+
 
 
 
@@ -298,7 +308,27 @@ def adminDashboard():
 
 @app.route("/problems/<int:probId>")
 def problem(probId):
-    return render_template("problems.html", prob=getProblem(probId))
+
+
+    prob = getProblem(probId)
+    if prob is None:
+        return "This problem does not exist.", 404
+
+    # change endsAt to a more redable format
+    endsAt = prob["endsAt"].replace('T', ' at time ')
+
+
+    #check if its active (deadline hasnt finished)
+    active = False
+    if prob["endsAt"] > datetime.now().isoformat(timespec='minutes'):
+        active = True
+
+    #Check if user can submit (its for their grade level)
+    print(getGradesProblem(prob["id"]))
+
+
+
+    return render_template("problems.html", prob=prob, active=active, endsAt=endsAt)
 
 
 @login_required

@@ -36,6 +36,12 @@
 {% block content %}
    <h1>{{ prob["title"]  }}</h1>
    <p>Problem id: {{ prob["id"] }}</p>
+   {% if active %}
+        <p>This problem is active until {{ endsAt }} </p>
+   {% else %}
+     <p>This problem is has ended. You can not submit it anymore {{ endsAt }} </p>
+
+   {% endif %}
 
    <div id="imgContainer">
 
