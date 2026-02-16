@@ -86,9 +86,8 @@
 
          <div class="capsuleProblems"> 
             <ul class="listProblems">
-              {% for prob in problems[0]%}
-                    <li><a href="/problems/{{prob[0]}}"> {{ prob[1] }}</a></li>
-                    <p>{{ prob[0] }}</p>
+              {% for prob in activeProblems%}
+                    <li><a href="/problems/{{prob['id']}}"> {{ prob['title'] }}</a></li>
                 {% endfor %}
             </ul>
 
@@ -105,8 +104,12 @@
 
             <div class="capsuleProblems"> 
                 <ul class="listProblems">
-                    
-                </ul>
+                {% for prob in pastProblems%}
+                        <li><a href="/problems/{{prob['id']}}"> {{ prob['title'] }}</a></li>
+                    {% endfor %}
+            </ul>
+
+                
 
              </div>
                    

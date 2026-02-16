@@ -120,15 +120,6 @@ def does_user_exist(email):
 def isAdmin(email):
     return executeQuery('SELECT * FROM admins WHERE email = ?', (email, )) != []
 
-#Get active problems, taking into account the grade of the student. Returns a list where index 0 represents a list of active problems, and index 1 a list inactive
-def getDashboardProblems(grade):
-    result = []
-    r = executeQuery('SELECT id, title FROM mathProblems, mathProblemsGrades where grade = ? and endsAt > ? and id = problemId', (grade, datetime.now().isoformat(timespec='minutes')))
-    result.append(r)
-    r = executeQuery('SELECT id, title FROM mathProblems, mathProblemsGrades where grade = ? and endsAt > ? and id = problemId', (grade, datetime.now().isoformat(timespec='minutes')))
-    result.append(r)
-
-    return result
 
 def getProblem(id): 
     result = executeQuery("SELECT * FROM mathProblems WHERE id = ?;", (id,), True)
@@ -173,20 +164,50 @@ def getGradesProblem(id):
    return result
 
 
-def canStudentSubmit(id, email):
+def canStudentSubmit(probId, email):
 
     #Check that the problem is for the students grade level and hasn't ended 
-    if getGrade(email) in getGradesProblem(id) and getProblem(id)["endsAt"] >= datetime.now().isoformat(timespec='minutes'):
+    if getGrade(email) in getGradesProblem(probId) and getProblem(probId)["endsAt"] >= datetime.now().isoformat(timespec='minutes'):
 
-        #check that students has submited
-        if executeQuery("SELECT * FROM studentsAnswers WHERE problemId = ? AND email = ?", (id, email)) != []: 
+        #check that students has not submited
+        print("MAMAMAMMAM")
+        print(executeQuery("SELECT * FROM studentsAnswers WHERE problemId = ? AND email = ?", (probId, email)))
+       
+        if executeQuery("SELECT * FROM studentsAnswers WHERE problemId = ? AND email = ?", (probId, email)) == []: 
             return True
         
     return False
 
 
+#Get active problems, taking into account the grade of the student. Returns a list where index 0 represents a list of active problems, and index 1 a list inactive
+def getDashboardProblems(email):
+    grade = getGrade(email)
+    #get id of problems that match the student's grade
+    s = '''
+        SELECT title, id from mathProblems, mathProblemsGrades
+        WHERE mathProblemsGrades.problemId = mathProblems.id
+        AND mathProblemsGrades.grade = ? 
+        AND mathProblems.endsAt >= ? 
+        AND mathProblems.id NOT IN (
+          SELECT problemId 
+          FROM studentsAnswers 
+          WHERE email = ?
+      )
+    '''
+    active = executeQuery(s, (grade, datetime.now().isoformat(timespec='minutes'), email), True)
+    s = '''
+       SELECT title, id FROM studentsAnswers, mathProblems
+       WHERE studentsAnswers.problemId = mathProblems.id
+       AND studentsAnswers.email = ?
+    
+    '''
+    past = executeQuery(s, (email,), True)
+
+
+    return active, past
+
 def studentSubmit(email, problemId, answer):
-    executeQuery("INSERT INTO studentsAnswers (problemId, email, answer) VALUES (?, ?, ?)", (email, problemId, answer))
+    executeQuery("INSERT INTO studentsAnswers (problemId, email, answer) VALUES (?, ?, ?)", (problemId, email, answer))
 
 
 app = Flask(__name__)
@@ -279,10 +300,11 @@ def dashboard():
     #if admin
     if session["isAdmin"]:
         return render_template('adminDashboard.html', name=session['firstName'], profilePic=session['picture']) 
+ 
 
-
-    grade = getGrade(session["email"])
-    return render_template('dashboard.html', name=session['firstName'], profilePic=session['picture'], problems=getDashboardProblems(grade))
+    active, past = getDashboardProblems(session["email"])
+    
+    return render_template('dashboard.html', name=session['firstName'], profilePic=session['picture'], activeProblems=active, pastProblem=past)
 
 
 
