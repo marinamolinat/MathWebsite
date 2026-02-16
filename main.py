@@ -304,7 +304,7 @@ def dashboard():
 
     active, past = getDashboardProblems(session["email"])
     
-    return render_template('dashboard.html', name=session['firstName'], profilePic=session['picture'], activeProblems=active, pastProblem=past)
+    return render_template('dashboard.html', name=session['firstName'], profilePic=session['picture'], activeProblems=active, pastProblems=past)
 
 
 
