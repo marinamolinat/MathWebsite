@@ -9,7 +9,10 @@ from google.oauth2 import id_token
 from pip._vendor import cachecontrol
 import json
 import time
+import cloudinary
 import cloudinary.uploader
+from cloudinary.utils import cloudinary_url
+
 
 
 #Some things for google oauth 
@@ -22,7 +25,17 @@ flow = Flow.from_client_secrets_file(client_secrets_file="secret.json", scopes=S
 with open("secret.json", "r") as f:
     data = json.load(f)
     GOOGLE_CLIENT_ID = data["web"]["client_id"]
+    cloudinary.config( 
+    cloud_name = data["cloud"]["name"], 
+    api_key = data["cloud"]["key"], 
+    api_secret = data["cloud"]["secret"], 
+    secure=True)
     
+
+
+
+
+
 
 
 #login required decorator 

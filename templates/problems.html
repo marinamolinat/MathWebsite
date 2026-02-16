@@ -1,12 +1,53 @@
 {% extends "base.html" %}
+
+
+{% block styles %}
+<style>
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        
+     
+
+    }
+
+    #imgContainer {
+        width: 100%;
+        height: 40%;
+   
+        margin-bottom: 20px;
+      
+    }
+
+        
+
+ </style>
+     
+    
+
+{% endblock %}
+
+
+
+
+
+
 {% block content %}
    <h1>{{ prob["title"]  }}</h1>
    <p>Problem id: {{ prob["id"] }}</p>
 
-   <img src="{{ prob['imageCDN'] }}" />
+   <div id="imgContainer">
 
-   <p> prob["textBody"]  </p>
+    <img src="{{ prob['imageCDN'] }}"/>
 
+   </div>
+
+   
+
+   <p> {{ prob["textBody"] }}  </p>
+
+    
 
 
 
