@@ -210,6 +210,9 @@ def studentSubmit(email, problemId, answer):
     executeQuery("INSERT INTO studentsAnswers (problemId, email, answer) VALUES (?, ?, ?)", (problemId, email, answer))
 
 
+def getAllProblems():
+   return executeQuery("SELECT title, id FROM mathProblems", (), True)
+
 app = Flask(__name__)
 app.secret_key = "will change this later lol"
 
@@ -299,7 +302,7 @@ def dashboard():
 
     #if admin
     if session["isAdmin"]:
-        return render_template('adminDashboard.html', name=session['firstName'], profilePic=session['picture']) 
+        return render_template('adminDashboard.html', name=session['firstName'], profilePic=session['picture'], problems=getAllProblems()) 
  
 
     active, past = getDashboardProblems(session["email"])
@@ -336,7 +339,7 @@ def adminDashboard():
 
 
 
-    return render_template('adminDashboard.html', name=session['firstName'], profilePic=session['picture'])
+    return render_template('adminDashboard.html', name=session['firstName'], profilePic=session['picture'], problems=getAllProblems())
 
 
 

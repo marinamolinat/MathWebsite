@@ -21,15 +21,15 @@
         .containerProblems {
             color: #266943;
             background-color: #79bd95;
-            width: 45%;
+            width: 80%;
             border-radius: 10px;
             padding: 10px;
-            height: 330px;
+            height: 400px;
         }
 
         .capsuleProblems {
             overflow-y: scroll;
-            height: 100%;
+            height: 70%;
             padding: 0;
             background-color: rgba(126, 216, 174, 0.5);
             border-radius: 10px;
@@ -71,10 +71,15 @@
             height: 200px;
         }
 
-        
+
+        #addAdmin {
+            background-color:  rgba(126, 216, 174, 0.5);
+            border-radius: 10px;
+            padding: 10px;
+            width:  80%;
+        }
 
         
-
        
 
 
@@ -97,7 +102,7 @@
          <img  src="{{ profilePic }}" alt="Profile Picture" id="profilePic">
     </div>
 
-    <div style="display: flex; justify-content: space-around; margin: 50px;">
+    <div style="display: flex; flex-direction: column; align-items: center; margin: 50px; gap: 20px;">
         <div class="containerProblems"> 
         <div>  
             <h2> Manage Problems </h2>
@@ -110,36 +115,38 @@
             </button>
          </div>
  
-        <p>Create, edit, and delete, problems</p>
+        <p>Create and delete problems. This list showcases all problems that have been created.</p>
 
          <div class="capsuleProblems"> 
+           
             <ul class="listProblems">
+              {% for prob in problems%}
+                    <li><a href="/problems/{{prob['id']}}"> {{ prob['title'] }}</a></li>
+                {% endfor %}
             </ul>
-
+    
          </div>
-                   
-            
+                
 
      
         </div>
-        <div  class="containerProblems"> 
-            <h2>Grade Problems</h2>
 
-            <p>Grade student's answers (manually or automatically)</p>
 
-            <div class="capsuleProblems"> 
-                <ul class="listProblems">
-                    
-                </ul>
+           
+                   <div id="addAdmin">
 
-             </div>
-                   
 
-        </div>
-
+                        <label for="inputEmail">Input the email of anyone to make them an Admin</label>
+                        <p>WARNING: Do this with care, they can delete problems, assign scores, and add more admins</p>
+                        <input type="text" id="inputEmail">
+                        <button style="margin-top: 10px;" class="btn btn-success"> Add admin</button>
+                        
+                </div>
+    
 
     </div>
-    
+ 
+ 
 
 
 
@@ -191,8 +198,6 @@
 
      
 
-
-        
 
 
 
