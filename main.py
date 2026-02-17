@@ -95,7 +95,17 @@ def executeQueries(queries):
 
     return result #returns a list of list of (with tuples) -> ew, i'm aware
 
+def getStudentTotalScore(email):
+    s = '''
+            SELECT SUM(scoreReceived) AS totalScore
+            FROM studentsAnswers
+            WHERE email = ?
+            GROUP BY email;
 
+    '''
+    r = executeQuery(s, (email, ))
+    if r != []:
+        return r[0][0]
 
 
 def add_student(email, firstName, lastName, grade, house):
@@ -340,7 +350,7 @@ def dashboard():
 
     active, past = getDashboardProblems(session["email"])
     
-    return render_template('dashboard.html', name=session['firstName'], profilePic=session['picture'], activeProblems=active, pastProblems=past, houseColor=getHouseColor(getStudentHouse(session['email'])))
+    return render_template('dashboard.html', name=session['firstName'], profilePic=session['picture'], activeProblems=active, pastProblems=past, houseColor=getHouseColor(getStudentHouse(session['email'])), score=getStudentTotalScore(session['email']))
 
 
 
