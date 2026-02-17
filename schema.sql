@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS mathProblems (
     textBody TEXT NOT NULL,
     imageCDN TEXT, 
     correctAnswer TEXT,
+    pointsIfCorrect INTEGER NOT NULL,
     endsAt TEXT NOT NULL
 );
 

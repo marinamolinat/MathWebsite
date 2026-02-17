@@ -121,9 +121,18 @@
            
             <ul class="listProblems">
               {% for prob in problems%}
-                    <li><a href="/problems/{{prob['id']}}"> {{ prob['title'] }}</a></li>
+                    <li><a href="/problems/{{prob['id']}}" style="display: flex; justify-content: space-between;"> 
+
+                        <p> {{ prob['title']}} </p>
+
+                        <p>Answers: {{ prob['numAnswers']}} </p>
+
+
+
+                    </a></li>
                 {% endfor %}
             </ul>
+
     
          </div>
                 
@@ -133,15 +142,7 @@
 
 
            
-                   <div id="addAdmin">
-
-
-                        <label for="inputEmail">Input the email of anyone to make them an Admin</label>
-                        <p>WARNING: Do this with care, they can delete problems, assign scores, and add more admins</p>
-                        <input type="text" id="inputEmail">
-                        <button style="margin-top: 10px;" class="btn btn-success"> Add admin</button>
-                        
-                </div>
+           
     
 
     </div>
@@ -188,8 +189,13 @@
 
            
           
-            <label for="answer">Correct Answer (optional, this is for autograding)</label>
+            <label for="answer">Correct Answer, this is for autograding</label>
             <input id="answer" type="text" name="answer">
+
+            <label for="maxPoints">If a student gets this answer correct, how many points should be given.</label>
+            <input id="maxPoints" type="number" name="pointsIfCorrect">
+            
+            
 
 
 

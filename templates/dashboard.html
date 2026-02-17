@@ -13,11 +13,14 @@
 
         #profilePic {
             width: 100px; 
-            height: 100x; 
+            height: 100px; 
             border-radius: 20%;
    
             margin-right: 25px;
-            margin-top: 5px
+            margin-top: 5px;
+            border-style: solid;
+            border-width: 10px;
+            border-color: {{ houseColor }};
 
         }
 
@@ -74,9 +77,16 @@
 
 {% block content %}
     <div id="top"> 
-        <h1> Hello {{name}} </h1>
+        <div>
+            <h1> Hello {{name}} </h1>
+            <h5>Your current total score is: {{ score }}</h5>
+
+        </div>
+  
+
          <img  src="{{ profilePic }}" alt="Profile Picture" id="profilePic">
     </div>
+ 
     
 
     <div style="display: flex; justify-content: space-around; margin: 50px;">
@@ -94,7 +104,6 @@
          </div>
                    
             
-
      
         </div>
         <div  class="containerProblems"> 

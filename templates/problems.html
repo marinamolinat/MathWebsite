@@ -20,6 +20,20 @@
       
     }
 
+
+    #gradeProblems 
+    {
+        height: 200px;
+        width: 100%;
+        background-color: rgba(126, 216, 174, 0.5);
+        border-radius:  10px;
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+
+    }
+ 
+
         
 
  </style>
@@ -38,13 +52,16 @@
    {% if active %}
         <p>This problem is active until {{ endsAt }} </p>
    {% else %}
-     <p>This problem is has ended. You can not submit it anymore {{ endsAt }} </p>
+     <p>This problem has ended at {{ endsAt }} </p>
 
    {% endif %}
 
-   {% if not validGrade %}
-   <p>This problem CANNOT be submited for your grade level</p>
-   {% endif %}
+   <p> This problem is for the following grades:
+   {% for i in grades %}
+     {{ i }}{% if not loop.last %}, {% endif %}
+   {% endfor %}
+   </p>
+
 
 
     {% if prob['imageCDN'] is not none %}
@@ -57,7 +74,7 @@
 
    <p> {{ prob["textBody"] }}  </p>
 
-   {% if validGrade and active %}
+   {% if canSubmit %}
 
    <form method="post" action="/problems/{{ prob['id'] }}/answer">
     <label for="inputAnswer">Please input your answer. Do so to 3 decimal places. Do not write anything else, only the answer</label>
@@ -70,7 +87,64 @@
 
 
    </form>
+
+   {% else %}
+   <p>You can't submit to this problem. Either the deadline has passed, you are an organizer, you have already submitted, or it isn't for you grade level.</p>
+
    {% endif %}
+
+    {% if isAdmin %}
+    <div id="gradeProblems"> 
+
+        <div>
+            <p>
+             This problem has received {{ numAnswers }} answers. 
+            </p>
+
+            <p> 
+                The correct answer for this problem is {{ prob["correctAnswer"] }}
+            </p>
+            <button onclick="autoGrade()" class="btn btn-warning">Click here to autograde all answers</button>
+
+        </div>
+
+
+
+
+
+    <div>
+        <h5>List of students that have answered</h5>
+
+    </div>
+
+   </div>
+
+   {% endif %}
+
+   <script>
+
+    function autoGrade()
+    {
+        if (confirm("Are you sure you want to automatically grade all problems with the answer {{ prob['correctAnswer'] }}? This action cannot be undone")) {
+           
+            fetch("/problems/{{ prob['id'] }}/autograde", {
+                method: "POST",
+                body: new URLSearchParams({ autoGrade: "true" })
+            })
+    
+        }
+
+       
+
+    }
+
+
+
+
+   </script>
+
+
+  
 
     
 

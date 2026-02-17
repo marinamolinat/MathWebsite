@@ -32,6 +32,9 @@ with open("secret.json", "r") as f:
     secure=True)
     
 
+def getNumAnswers(probId):
+    return executeQuery("SELECT COUNT(*) FROM studentsAnswers WHERE problemId = ?", (probId, ))[0][0]
+
 
 #login required decorator 
 def login_required(f):
@@ -63,7 +66,7 @@ def executeQuery(query, params, dicty=False):
     if dicty: 
         connection.row_factory = sqlite3.Row 
 
-    cursor = connection.cursor()
+    cursor = connection.cursor() 
     cursor.execute(query, params)
     result = cursor.fetchall()
     connection.commit()
@@ -121,20 +124,32 @@ def isAdmin(email):
     return executeQuery('SELECT * FROM admins WHERE email = ?', (email, )) != []
 
 
-def getProblem(id): 
-    result = executeQuery("SELECT * FROM mathProblems WHERE id = ?;", (id,), True)
+def getProblem(probId): 
+    result = executeQuery("SELECT * FROM mathProblems WHERE id = ?;", (probId,), True)
     if result == []:
         return None
  
 
     return result[0]
 
+def getStudentHouse(email):
+    r = executeQuery('SELECT house FROM students where email = ?', (email, ))
+    if r != []:
+        return r[0][0]
+    
 
+
+def getHouseColor(house):
+    colors = {'Hood': "#049989", 'Nelson': "#e43739", 'Rodney': '#0054bb', 'Beatty': "#f4e216"}
+    return colors[house]
 
 def getGrade(email):
-    return executeQuery('SELECT grade FROM students where email = ?', (email, ))[0][0]
+    r = executeQuery('SELECT grade FROM students where email = ?', (email, ))
+    if r != []:
+        return r[0][0]
+    return None
 
-def addProblem(title, text, file, grades, answer, deadline): 
+def addProblem(title, text, file, grades, answer, pointsIfCorrect, deadline): 
 
 
     if answer == "":
@@ -143,7 +158,7 @@ def addProblem(title, text, file, grades, answer, deadline):
     connection = sqlite3.connect("database.db")
     cursor = connection.cursor()
 
-    cursor.execute("INSERT INTO mathProblems (title, textBody, imageCDN, correctAnswer, endsAt) VALUES (?, ?, ?, ?, ?)", (title, text, file, answer, deadline))
+    cursor.execute("INSERT INTO mathProblems (title, textBody, imageCDN, correctAnswer, pointsIfCorrect, endsAt) VALUES (?, ?, ?, ?, ?, ?)", (title, text, file, answer, pointsIfCorrect, deadline))
     
     problem_id = cursor.lastrowid
 
@@ -154,8 +169,24 @@ def addProblem(title, text, file, grades, answer, deadline):
     connection.commit()
     connection.close()
 
-def getGradesProblem(id):
-   r = executeQuery("SELECT grade from mathProblemsGrades WHERE problemId = ?", (id,))
+def autoGrade(probId):
+    executeQuery(
+        '''
+        UPDATE studentsAnswers
+        SET scoreReceived = CASE 
+            WHEN answer = (SELECT correctAnswer FROM mathProblems WHERE id = problemId)
+            THEN (SELECT pointsIfCorrect FROM mathProblems WHERE id = problemId)
+            ELSE 0
+        END
+        WHERE problemId = ?;
+        
+            ''', (probId,)
+    )
+    print("DONE EFUHEIWUHFAEW EXECUTED")
+
+
+def getGradesProblem(probId):
+   r = executeQuery("SELECT grade from mathProblemsGrades WHERE problemId = ?", (probId,))
    #convert it to a list of grades instead of a list of list
    result = []
    for i in r: 
@@ -299,15 +330,17 @@ def onboard():
 @app.route('/dashboard')
 @login_required
 def dashboard():
+ 
 
     #if admin
     if session["isAdmin"]:
-        return render_template('adminDashboard.html', name=session['firstName'], profilePic=session['picture'], problems=getAllProblems()) 
- 
+        return redirect(url_for('adminDashboard'))
+    
+
 
     active, past = getDashboardProblems(session["email"])
     
-    return render_template('dashboard.html', name=session['firstName'], profilePic=session['picture'], activeProblems=active, pastProblems=past)
+    return render_template('dashboard.html', name=session['firstName'], profilePic=session['picture'], activeProblems=active, pastProblems=past, houseColor=getHouseColor(getStudentHouse(session['email'])))
 
 
 
@@ -333,19 +366,26 @@ def adminDashboard():
             else:
                 file = None
 
-            addProblem(title=request.form.get("title"), text=request.form.get("textbody"), file=file, grades=request.form.getlist("grades"), answer=request.form.get("answer"), deadline=request.form.get("deadline"))
+    
+            addProblem(title=request.form.get("title"), text=request.form.get("textbody"), file=file, grades=request.form.getlist("grades"), answer=request.form.get("answer"), pointsIfCorrect=request.form.get("pointsIfCorrect"), deadline=request.form.get("deadline"))
+           
+
+  
+    sqlProblems = getAllProblems()
+        
+    problems = []
+    for row in sqlProblems:
+        p = dict(row)
+        p["numAnswers"] = getNumAnswers(p["id"])
+        problems.append(p)
 
 
-
-
-
-    return render_template('adminDashboard.html', name=session['firstName'], profilePic=session['picture'], problems=getAllProblems())
+    return render_template('adminDashboard.html', name=session['firstName'], profilePic=session['picture'], problems=problems)
 
 
 
 @app.route("/problems/<int:probId>")
 def problem(probId):
-
 
     prob = getProblem(probId)
     if prob is None:
@@ -355,19 +395,38 @@ def problem(probId):
     endsAt = prob["endsAt"].replace('T', ' at time ')
 
 
-    #check if its active (deadline hasnt finished)
+    #check if student can submit (hasn't submitted yet, deadline hasn't passed, correct grade)
+    canSubmit = False
+    if canStudentSubmit(probId, session["email"]) and not session["isAdmin"]:
+        canSubmit = True
+    
+    grades = getGradesProblem(probId)
+
     active = False
     if prob["endsAt"] > datetime.now().isoformat(timespec='minutes'):
         active = True
 
-    #Check if user can submit (its for their grade level)
-    validGrade = False
-    print(getGrade(session["email"])) 
-    print(getGradesProblem(prob["id"]))
-    if getGrade(session["email"]) in getGradesProblem(prob["id"]):
-        validGrade = True
 
-    return render_template("problems.html", prob=prob, active=active, endsAt=endsAt, validGrade=validGrade)
+
+
+    
+
+    return render_template("problems.html", prob=prob, canSubmit=canSubmit, endsAt=endsAt, grades=grades, active=active, isAdmin=session["isAdmin"],   numAnswers=getNumAnswers(probId))
+
+
+@login_required
+@app.route('/problems/<int:probId>/autograde', methods=['POST'])
+def gradeProblem(probId):
+    print(request.form.get("autoGrade"))
+    print("n aejfbebfkha aHBFAEHFBWEHBFW AYDUA")
+
+    if request.form.get("autoGrade"):
+        autoGrade(probId)
+    return "yupi?"
+
+
+
+     
 
 
 
