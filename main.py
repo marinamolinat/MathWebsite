@@ -137,6 +137,7 @@ def isAdmin(email):
 
 
 def getProblem(probId): 
+ 
     result = executeQuery("SELECT * FROM mathProblems WHERE id = ?;", (probId,), True)
     if result == []:
         return None
@@ -213,7 +214,6 @@ def canStudentSubmit(probId, email):
     if getGrade(email) in getGradesProblem(probId) and getProblem(probId)["endsAt"] >= datetime.now().isoformat(timespec='minutes'):
 
         #check that students has not submited
-        print("MAMAMAMMAM")
         print(executeQuery("SELECT * FROM studentsAnswers WHERE problemId = ? AND email = ?", (probId, email)))
        
         if executeQuery("SELECT * FROM studentsAnswers WHERE problemId = ? AND email = ?", (probId, email)) == []: 
@@ -257,6 +257,18 @@ def studentSubmit(email, problemId, answer):
 
 def getAllProblems():
    return executeQuery("SELECT title, id FROM mathProblems", (), True)
+
+
+
+def getStudentAnswer(probId, email):
+    r =  executeQuery("SELECT * FROM studentsAnswers WHERE problemId = ? AND email = ?", (probId, email), True)
+    if r != []:
+        print(r)
+        return r[0]
+    
+    return None
+
+
 
 app = Flask(__name__)
 app.secret_key = "will change this later lol"
@@ -415,6 +427,7 @@ def problem(probId):
             abort(403)
 
     prob = getProblem(probId)
+    studentAnswer = getStudentAnswer(probId, session['email'])
     if prob is None:
         return "This problem does not exist.", 404
 
@@ -436,20 +449,22 @@ def problem(probId):
 
 
 
-    
 
-    return render_template("problems.html", prob=prob, canSubmit=canSubmit, endsAt=endsAt, grades=grades, active=active, isAdmin=session["isAdmin"],   numAnswers=getNumAnswers(probId))
+
+    return render_template("problems.html", prob=prob, canSubmit=canSubmit, endsAt=endsAt, grades=grades, active=active, isAdmin=session["isAdmin"],   numAnswers=getNumAnswers(probId), studentAnswer=studentAnswer)
 
 
 @login_required
 @app.route('/problems/<int:probId>/autograde', methods=['POST'])
 def gradeProblem(probId):
-    print(request.form.get("autoGrade"))
-    print("n aejfbebfkha aHBFAEHFBWEHBFW AYDUA")
-
+   
+    
     if request.form.get("autoGrade"):
         autoGrade(probId)
-    return "yupi?"
+        return redirect(url_for("success", title='Nice! Problems have been autograded', subtitle=':)'))
+       
+
+    
 
 
 
