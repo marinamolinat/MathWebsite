@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS studentsAnswers(
     email TEXT,
     answer TEXT NOT NULL,
     scoreReceived INTEGER, 
-    PRIMARY KEY (problemId, email)
+    PRIMARY KEY (problemId, email),
+    FOREIGN KEY (problemId) REFERENCES mathProblems(id) ON DELETE CASCADE
 );
 
 

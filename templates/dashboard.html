@@ -115,6 +115,7 @@
                 <ul class="listProblems">
                 {% for prob in pastProblems%}
                         <li><a href="/problems/{{prob['id']}}"> {{ prob['title'] }}</a></li>
+                        {% if prob['scoreReceived' is not none]%} GRADED {% else %} Not Graded {% endif %}
                 {% endfor %}
             </ul>
 

@@ -46,6 +46,7 @@ def login_required(f):
     return decorated
 
 
+
 #Database functions
 def init_db():
     connection = sqlite3.connect('database.db')
@@ -74,7 +75,8 @@ def executeQuery(query, params, dicty=False):
 
     return result
 
-
+def deleteProblem(probId):
+    executeQuery("DELETE FROM mathProblems WHERE id = ?", (probId,))
 
 #must mantian tarsncactionality lol
 #list of tuples where each tuple is (query, params)
@@ -225,7 +227,7 @@ def getDashboardProblems(email):
     grade = getGrade(email)
     #get id of problems that match the student's grade
     s = '''
-        SELECT title, id from mathProblems, mathProblemsGrades
+        SELECT title, id, scoreReceived from mathProblems, mathProblemsGrades
         WHERE mathProblemsGrades.problemId = mathProblems.id
         AND mathProblemsGrades.grade = ? 
         AND mathProblems.endsAt >= ? 
@@ -237,10 +239,12 @@ def getDashboardProblems(email):
     '''
     active = executeQuery(s, (grade, datetime.now().isoformat(timespec='minutes'), email), True)
     s = '''
-       SELECT title, id FROM studentsAnswers, mathProblems
+       SELECT title, id, scoreReceived FROM studentsAnswers, mathProblems
        WHERE studentsAnswers.problemId = mathProblems.id
        AND studentsAnswers.email = ?
     
+
+
     '''
     past = executeQuery(s, (email,), True)
 
@@ -311,16 +315,20 @@ def callback():
     session["lastName"] = id_info.get("family_name")
     session["picture"] = id_info.get("picture")
     session["isAdmin"] = False
+
   
 
-    #See if the student is new exists in the database. i.e. they are a student and need to "onboard"
-    if not does_user_exist(session["email"]):
-        return redirect(url_for('onboard'))
-    
+   
     #see if they are admin: 
-    elif isAdmin(session["email"]):
+    if isAdmin(session["email"]):
+
         session["isAdmin"] = True
         return redirect(url_for('adminDashboard'), )
+    
+    #See if the student is new exists in the database. i.e. they are a student and need to "onboard"
+    elif not does_user_exist(session["email"]):
+        return redirect(url_for('onboard'))
+    
 
     return redirect(url_for('dashboard'))
 
@@ -394,8 +402,15 @@ def adminDashboard():
 
 
 
-@app.route("/problems/<int:probId>")
+@app.route("/problems/<int:probId>", methods=['GET' , 'POST', 'DELETE'])
 def problem(probId):
+
+    if request.method == 'DELETE':
+        if session['isAdmin']:
+            deleteProblem(probId)
+           
+        else: 
+            abort(403)
 
     prob = getProblem(probId)
     if prob is None:
