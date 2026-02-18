@@ -156,6 +156,12 @@
                 method: "DELETE"
       
             })
+            .then(response => {
+            if (response.redirected) {
+                // Redirige manualmente a la URL enviada por Flask
+                window.location.href = response.url;
+            }
+        })
     
         }
 

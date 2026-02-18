@@ -227,7 +227,7 @@ def getDashboardProblems(email):
     grade = getGrade(email)
     #get id of problems that match the student's grade
     s = '''
-        SELECT title, id, scoreReceived from mathProblems, mathProblemsGrades
+        SELECT title, id FROM mathProblems, mathProblemsGrades
         WHERE mathProblemsGrades.problemId = mathProblems.id
         AND mathProblemsGrades.grade = ? 
         AND mathProblems.endsAt >= ? 
@@ -386,6 +386,8 @@ def adminDashboard():
 
     
             addProblem(title=request.form.get("title"), text=request.form.get("textbody"), file=file, grades=request.form.getlist("grades"), answer=request.form.get("answer"), pointsIfCorrect=request.form.get("pointsIfCorrect"), deadline=request.form.get("deadline"))
+            ##revise 
+            return redirect(url_for('success', title='Success! The problem has been added'))
            
 
   
@@ -408,7 +410,7 @@ def problem(probId):
     if request.method == 'DELETE':
         if session['isAdmin']:
             deleteProblem(probId)
-           
+            return redirect(url_for('success', title='Success! The problem has been deleted'), code=303)
         else: 
             abort(403)
 
@@ -451,7 +453,11 @@ def gradeProblem(probId):
 
 
 
-     
+@login_required
+@app.route('/success')     
+def success():
+    return render_template("success.html", title=request.args.get("title"), subtitle=request.args.get("subtitle"))
+
 
 
 
@@ -464,7 +470,8 @@ def submitProblem(probId):
     # 1. problem is active and can students submit it based on their grade
     if canStudentSubmit(probId, session["email"]):
         studentSubmit(email=session["email"],  problemId=probId, answer=request.form.get("answer"))
-        return render_template("success.html")
+
+        return redirect(url_for("success", title='Nice! You have submited your problem', subtitle='Wait a few days for it to be graded and for you to receive your score!'))
     else: 
         return "sorry, something went wrong. You can't submit to this problem", 403
 
