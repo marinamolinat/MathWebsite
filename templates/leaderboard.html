@@ -32,6 +32,11 @@
             
 
         }
+        select {
+              opacity: 0.6;
+          
+
+        }
 
         
 
@@ -47,14 +52,27 @@
     <div id="welcome"> 
         <h1> LEADERBOARD </h1>
     </div>
+  
 
     <div id="leaderboard">
 
+       
+
         <ul> 
+                <select class="form-select" name="grade" id="selectGrade" required>
+           <option value="all" selected>All grades</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+        </select>
 
         {% for s in students %}
 
-        <li style="border-color: {{ s['house'] }};">
+        <li>
             <div style="display: flex; gap: 20px; align-items: center; justify-content: center;"> 
 
                 <img src="{{s['profilePicURL']}}">
@@ -89,6 +107,24 @@
 
 
     </div>
+
+
+    <script> 
+        selectGrade = document.getElementById("selectGrade")
+        selectGrade.addEventListener("change", function() {
+            window.location.href = `/leaderboard?grade=${encodeURIComponent(this.value)}`;
+    
+
+     
+
+            
+         })
+
+    
+
+
+
+    </script>
 {% endblock %}
 
 

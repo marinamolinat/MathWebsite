@@ -270,18 +270,36 @@ def getStudentAnswer(probId, email):
 
 
 #For The leaderboard
-def getLeaderboardInfo():
-    s = '''
-        SELECT users.firstName, users.firstLastName, users.profilePicURL, students.house,
-        SUM(studentsAnswers.scoreReceived) AS totalScore
-        FROM users, students, studentsAnswers
-        WHERE users.email = students.email
-        AND students.email = studentsAnswers.email
-        GROUP BY users.email, users.firstName, users.firstLastName, users.profilePicURL, students.house
-        ORDER BY totalScore DESC;
-    '''
-    return executeQuery(s, (), True)
+def getLeaderboardInfo(grade=None):
 
+    if grade == None:
+
+        s = '''
+            SELECT users.firstName, users.firstLastName, users.profilePicURL, students.house,
+            SUM(studentsAnswers.scoreReceived) AS totalScore
+            FROM users, students, studentsAnswers
+            WHERE users.email = students.email
+            AND students.email = studentsAnswers.email
+            GROUP BY users.email, users.firstName, users.firstLastName, users.profilePicURL, students.house
+            ORDER BY totalScore DESC;
+        '''
+        r = executeQuery(s, (), True)
+
+    else: 
+        s = '''
+        SELECT users.firstName, users.firstLastName, users.profilePicURL, students.house,
+            SUM(studentsAnswers.scoreReceived) AS totalScore
+            FROM users, students, studentsAnswers
+            WHERE users.email = students.email
+            AND students.email = studentsAnswers.email
+            AND students.grade = ?
+            GROUP BY users.email, users.firstName, users.firstLastName, users.profilePicURL, students.house
+            ORDER BY totalScore DESC;
+            '''
+        r = executeQuery(s, (grade,), True)
+    
+
+    return r
 
 
 app = Flask(__name__)
@@ -306,8 +324,6 @@ def oauth():
     session["state"] = state
 
     return redirect(authorization_url)
-
-
 
 
 
@@ -507,8 +523,17 @@ def resources():
 @login_required
 @app.route('/leaderboard')
 def leaderboard():
-    print(getLeaderboardInfo())
-    return render_template('leaderboard.html', name=session['firstName'], students=getLeaderboardInfo())
+
+  
+    
+    r = (request.args.get("grade"))
+
+    if r in ['5', '6', '7', '8', '9', '10', '11']:
+        r = int(r)
+    else: 
+        r = None
+
+    return render_template('leaderboard.html', name=session['firstName'], students=getLeaderboardInfo(r))
 
 
 @app.route('/logout')
