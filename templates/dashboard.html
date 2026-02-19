@@ -119,8 +119,11 @@
             <div class="capsuleProblems"> 
                 <ul class="listProblems">
                 {% for prob in pastProblems%}
-                        <li><a href="/problems/{{prob['id']}}"> {{ prob['title'] }}</a></li>
-                        {% if prob['scoreReceived' is not none]%} GRADED {% else %} Not Graded {% endif %}
+                        <li><a style="display: flex; justify-content: space-between;" href="/problems/{{prob['id']}}"> 
+                             <div>{{ prob['title'] }}</div>
+                             <div> {% if prob['scoreReceived'] is not none %} GRADED {% else %} Not Graded {% endif %}</div>
+                        </a></li>
+                       
                 {% endfor %}
             </ul>
 

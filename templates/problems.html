@@ -109,14 +109,17 @@
    {% if studentAnswer is not none %}
    <p>You have answered this problem with: {{ studentAnswer['answer']}}</p>
 
-   {% if studentAnswer['scoreReceived'] is not none%}
-   <p>This problem has been graded. You have received a score of {{studentAnswer['scoreReceived']}} </p>
 
     {% if studentAnswer['scoreReceived'] > 0 %}
-    <p>Congrats! Your answer was correct. You received the maximum number of points for this problem:  </p>
-    {% endif %}
+    <p>Congrats! Your answer was correct. You received the {{studentAnswer['scoreReceived']}} points. </p>
 
+    {% elif studentAnswer['scoreReceived'] is not none%}
+   <p>This problem has been graded. You have received a score of {{studentAnswer['scoreReceived']}}. Your answer wasn't entirely correct. 
+    If you have any question, please contact one of the organizers
+
+   </p>
    {% else %}
+
    <p>This problem hasn't been graded. Wait for an organizer to do so</p>
    {% endif %}
 
