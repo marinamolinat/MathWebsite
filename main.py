@@ -487,12 +487,22 @@ def problem(probId):
     prob = getProblem(probId)
 
     if request.method == 'PATCH':
+        
         #server side validation
-
         if session['isAdmin']:
+        
             score = request.form.get("score")
-            if (type(score) is int or type(score) is float) and (score > 0 and score <= prob['pointsIfCorrect']):
-                changeScore(score=score, email=request.form.get("email"), probId=probId)
+
+            try:
+                score = float(score)
+                if score >= 0 and score <= prob['pointsIfCorrect']:
+                    changeScore(score=score, email=request.form.get("email"), probId=probId)
+
+               
+            except ValueError:
+                abort(400)
+                
+               
         else: 
             abort(403)
 
