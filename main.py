@@ -110,6 +110,8 @@ def getStudentTotalScore(email):
         return r[0][0]
 
 
+
+
 def add_student(email, firstName, lastName, grade, house, profilePic):
 
     #break last name into first and second last name (if applicable)
@@ -301,6 +303,29 @@ def getLeaderboardInfo(grade=None):
 
     return r
 
+def getAllStudentAnswers(probId):
+    s = '''
+        SELECT firstName, firstLastName, answer, scoreReceived, students.email
+        FROM studentsAnswers, students, users
+        WHERE students.email = studentsAnswers.email
+        AND users.email = students.email
+        AND studentsAnswers.problemId = ?
+        '''
+     
+    return executeQuery(s, (probId,), True)
+
+def  changeScore(score, email, probId):
+    s = '''
+
+    UPDATE studentsAnswers
+    SET scoreReceived = ?
+    WHERE problemId = ?
+    AND email = ?
+    '''
+    return executeQuery(s, (score, probId, email))
+
+
+
 
 app = Flask(__name__)
 app.secret_key = "will change this later lol"
@@ -446,8 +471,10 @@ def adminDashboard():
 
 
 
-@app.route("/problems/<int:probId>", methods=['GET' , 'POST', 'DELETE'])
+@app.route("/problems/<int:probId>", methods=['GET' , 'POST', 'DELETE', 'PATCH'])
 def problem(probId):
+
+
 
     if request.method == 'DELETE':
         if session['isAdmin']:
@@ -456,7 +483,23 @@ def problem(probId):
         else: 
             abort(403)
 
+
     prob = getProblem(probId)
+
+    if request.method == 'PATCH':
+        #server side validation
+
+        if session['isAdmin']:
+            score = request.form.get("score")
+            if (type(score) is int or type(score) is float) and (score > 0 and score <= prob['pointsIfCorrect']):
+                changeScore(score=score, email=request.form.get("email"), probId=probId)
+        else: 
+            abort(403)
+
+
+
+
+
     studentAnswer = getStudentAnswer(probId, session['email'])
     if prob is None:
         return "This problem does not exist.", 404
@@ -476,7 +519,7 @@ def problem(probId):
     if prob["endsAt"] > datetime.now().isoformat(timespec='minutes'):
         active = True
 
-    return render_template("problems.html", prob=prob, canSubmit=canSubmit, endsAt=endsAt, grades=grades, active=active, isAdmin=session["isAdmin"],   numAnswers=getNumAnswers(probId), studentAnswer=studentAnswer)
+    return render_template("problems.html", prob=prob, canSubmit=canSubmit, endsAt=endsAt, grades=grades, active=active, isAdmin=session["isAdmin"],   numAnswers=getNumAnswers(probId), studentAnswer=studentAnswer, students=getAllStudentAnswers(probId))
 
 
 @login_required

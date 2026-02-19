@@ -59,8 +59,11 @@
        
 
         <ul> 
-                <select class="form-select" name="grade" id="selectGrade" required>
-           <option value="all" selected>All grades</option>
+        <select class="form-select" name="grade" id="selectGrade">
+                <option value="" selected disabled>
+                    Select a grade
+                </option>
+              <option value="all">All grades</option>
                 <option value="5">5</option>
                 <option value="6">6</option>
                 <option value="7">7</option>
@@ -115,7 +118,7 @@
             window.location.href = `/leaderboard?grade=${encodeURIComponent(this.value)}`;
     
 
-     
+    
 
             
          })

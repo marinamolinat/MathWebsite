@@ -19,17 +19,55 @@
         margin-bottom: 20px;
       
     }
+    .container {
+        background-color: rgba(3, 70, 39, 0.385);
+        border-radius: 10px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow-y: scroll;
+        
+    }
 
 
     #gradeProblems 
     {
-        height: 200px;
+        height: 250px;
         width: 100%;
         background-color: rgba(126, 216, 174, 0.5);
         border-radius:  10px;
         padding: 10px;
         display: flex;
         justify-content: space-between;
+        gap: 20px;
+        
+
+    }
+
+     #gradeProblems ul {
+         display: flex;
+         flex-direction: column;
+         gap: 10px;
+         width: 100%;
+        
+
+     }
+
+
+
+    #gradeProblems li {
+        width: 100%;
+         background-color: rgba(126, 216, 174, 0.291);
+        
+         gap: 10px;
+         border-radius: 10px;
+         padding: 10px;
+         display: flex;
+        align-items: center;
+        justify-content: space-between;
+        
+         
 
     }
  
@@ -129,7 +167,9 @@
     {% if isAdmin %}
     <div id="gradeProblems"> 
 
-        <div>
+        <div class="container">
+
+            <h5>Autograde and Information</h5>
             <p>
              This problem has received {{ numAnswers }} answers. 
             </p>
@@ -149,8 +189,32 @@
 
 
 
-    <div>
+    <div class="container">
         <h5>List of students that have answered</h5>
+
+        <ul> 
+            {% for s in students %}
+            <li>  <p>{{ s['firstName'] }} {{ s['firstLastName'] }} </p>
+                
+                <p> Student Answer: {{ s['answer'] }}  </p>
+
+                 <p>Points received: {{ s['scoreReceived'] }}  </p>
+      
+                <button onclick="changeScore({{ s['email'] }})" type="button" class="btn btn-success">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
+                <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"></path>
+                <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"></path>
+                </svg>
+                
+              </button>
+            </li>
+
+
+            {% endfor %}
+
+
+
+        </ul>
 
     </div>
 
@@ -196,6 +260,31 @@
             }
         })
     
+        }
+
+    }
+
+    function changeScore(email)  {
+        let num = prompt("Enter the new score you wish to assign to the student:");
+
+        if (isNaN(num))
+        {
+            alert("Sorry, thats not a number. Try again")
+
+        }
+
+        else if (num > {{ prob[" pointsIfCorrect"] }} || num < 0 )
+        {
+            alert("Please input a number between 0 and the maximum score for this question (prob['pointsIfCorrect']) ")
+        }
+        else {
+
+            fetch("/problems/{{ prob['id'] }}", {
+                method: "PATCH",
+                body: new URLSearchParams({ score: num, email: email})
+      
+            })
+
         }
 
     }
