@@ -2,7 +2,8 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT PRIMARY KEY,
     firstName TEXT NOT NULL, 
     firstLastName TEXT NOT NULL, 
-    secondLastName TEXT
+    secondLastName TEXT, 
+    profilePicURL TEXT
 
 );
 
@@ -22,7 +23,7 @@ CREATE TABLE IF NOT EXISTS mathProblems (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     textBody TEXT NOT NULL,
-    imageCDN TEXT, 
+    imageURL TEXT, 
     correctAnswer TEXT,
     pointsIfCorrect INTEGER NOT NULL,
     endsAt TEXT NOT NULL

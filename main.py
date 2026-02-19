@@ -110,17 +110,17 @@ def getStudentTotalScore(email):
         return r[0][0]
 
 
-def add_student(email, firstName, lastName, grade, house):
+def add_student(email, firstName, lastName, grade, house, profilePic):
 
     #break last name into first and second last name (if applicable)
     lastNames = lastName.split(" ")
     queryList = []
 
     if len(lastNames) == 1: #if they only have one last name
-      queryList.append(('INSERT INTO users (email, firstName, firstLastName) VALUES (?, ?, ?)', (email, firstName, lastNames[0])))
+      queryList.append(('INSERT INTO users (email, firstName, firstLastName, profilePicURL) VALUES (?, ?, ?, ?)', (email, firstName, lastNames[0], profilePic)))
     
     else: 
-       queryList.append(('INSERT INTO users (email, firstName, firstLastName, secondLastName) VALUES (?, ?, ?, ?)', (email, firstName, lastNames[0], lastNames[1])))
+       queryList.append(('INSERT INTO users (email, firstName, firstLastName, secondLastName,  profilePicURL) VALUES (?, ?, ?, ?, ?)', (email, firstName, lastNames[0], lastNames[1], profilePic)))
        
     
     #now, student table
@@ -171,7 +171,7 @@ def addProblem(title, text, file, grades, answer, pointsIfCorrect, deadline):
     connection = sqlite3.connect("database.db")
     cursor = connection.cursor()
 
-    cursor.execute("INSERT INTO mathProblems (title, textBody, imageCDN, correctAnswer, pointsIfCorrect, endsAt) VALUES (?, ?, ?, ?, ?, ?)", (title, text, file, answer, pointsIfCorrect, deadline))
+    cursor.execute("INSERT INTO mathProblems (title, textBody, imageURL, correctAnswer, pointsIfCorrect, endsAt) VALUES (?, ?, ?, ?, ?, ?)", (title, text, file, answer, pointsIfCorrect, deadline))
     
     problem_id = cursor.lastrowid
 
@@ -269,6 +269,20 @@ def getStudentAnswer(probId, email):
     return None
 
 
+#For The leaderboard
+def getLeaderboardInfo():
+    s = '''
+        SELECT users.firstName, users.firstLastName, users.profilePicURL, students.house,
+        SUM(studentsAnswers.scoreReceived) AS totalScore
+        FROM users, students, studentsAnswers
+        WHERE users.email = students.email
+        AND students.email = studentsAnswers.email
+        GROUP BY users.email, users.firstName, users.firstLastName, users.profilePicURL, students.house
+        ORDER BY totalScore DESC;
+    '''
+    return executeQuery(s, (), True)
+
+
 
 app = Flask(__name__)
 app.secret_key = "will change this later lol"
@@ -351,7 +365,7 @@ def onboard():
     if request.method == 'POST':
         grade = request.form.get('grade')
         house = request.form.get('house')
-        add_student(session["email"], session["firstName"], session["lastName"], grade, house)
+        add_student(session["email"], session["firstName"], session["lastName"], grade, house, session['picture'])
         return redirect(url_for('dashboard'))
 
     return render_template('onboard.html', firstName=session['firstName'])
@@ -446,11 +460,6 @@ def problem(probId):
     if prob["endsAt"] > datetime.now().isoformat(timespec='minutes'):
         active = True
 
-
-
-
-
-
     return render_template("problems.html", prob=prob, canSubmit=canSubmit, endsAt=endsAt, grades=grades, active=active, isAdmin=session["isAdmin"],   numAnswers=getNumAnswers(probId), studentAnswer=studentAnswer)
 
 
@@ -472,7 +481,6 @@ def gradeProblem(probId):
 @app.route('/success')     
 def success():
     return render_template("success.html", title=request.args.get("title"), subtitle=request.args.get("subtitle"))
-
 
 
 
@@ -499,7 +507,8 @@ def resources():
 @login_required
 @app.route('/leaderboard')
 def leaderboard():
-    return render_template('leaderboard.html', name=session['firstName'])
+    print(getLeaderboardInfo())
+    return render_template('leaderboard.html', name=session['firstName'], students=getLeaderboardInfo())
 
 
 @app.route('/logout')

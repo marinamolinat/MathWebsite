@@ -2,12 +2,40 @@
 {% block title %} Leaderboard {% endblock %}
 {% block styles %}
     <style>
+        #leaderboard li {
+            background-color: #79bd95;
+            padding: 10px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          
+            width: 100%;
+
+        }
+
+        img {
+            border-radius: 10px;
+            height: 70px;
+        }
+
+        #leaderboard ul {
+            overflow-y: scroll;
+            height: 70vh;
+            padding: 10px;
+            background-color: rgba(126, 216, 174, 0.5);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            
+
+        }
+
         
 
      
-
-       
-
         
     </style>
 {% endblock %}
@@ -18,6 +46,48 @@
 {% block content %}
     <div id="welcome"> 
         <h1> LEADERBOARD </h1>
+    </div>
+
+    <div id="leaderboard">
+
+        <ul> 
+
+        {% for s in students %}
+
+        <li style="border-color: {{ s['house'] }};">
+            <div style="display: flex; gap: 20px; align-items: center; justify-content: center;"> 
+
+                <img src="{{s['profilePicURL']}}">
+            
+                <h5> {{ s['firstName']}} {{ s['firstLastName']}}  // House: {{ s['house'] }}</h5>
+              
+
+               
+
+            </div>
+
+            <div>
+
+                
+               
+
+                {{ s['totalScore'] }} 
+            </div>
+            
+
+        </li>
+
+        
+        {% endfor %}
+
+        </ul>
+
+        
+
+
+
+
+
     </div>
 {% endblock %}
 
