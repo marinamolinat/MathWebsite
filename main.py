@@ -568,10 +568,6 @@ def submitProblem(probId):
         return "sorry, something went wrong. You can't submit to this problem", 403
 
 
-@login_required
-@app.route('/resources')
-def resources():
-    return render_template('resources.html', name=session['firstName'])
 
 @login_required
 @app.route('/leaderboard')
