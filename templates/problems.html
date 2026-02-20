@@ -155,21 +155,31 @@
    <p>You have answered this problem with: {{ studentAnswer['answer']}}</p>
 
 
-    {% if studentAnswer['scoreReceived'] > 0 %}
-    <p>Congrats! Your answer was correct. You received the {{studentAnswer['scoreReceived']}} points. </p>
+    {% if studentAnswer['scoreReceived'] is not none %}
 
-    {% elif studentAnswer['scoreReceived'] is not none%}
-   <p>This problem has been graded. You have received a score of {{studentAnswer['scoreReceived']}}. Your answer wasn't entirely correct. 
-    If you have any question, please contact one of the organizers
+        {% if studentAnswer['scoreReceived'] == prob[" pointsIfCorrect"] %}
+        <p>Congrats! Your answer was correct. You received the maximum amount of points: {{studentAnswer['scoreReceived']}}</p>
+    
+        {% elif studentAnswer['scoreReceived'] > 0  %}
+         <p>This problem has been graded. You received partial points: {{studentAnswer['scoreReceived']}}</p>
+       
+         {% else %}
+         <p>This problem has been graded. You have received a score of {{studentAnswer['scoreReceived']}}. Your answer wasn't correct. Contact the organizers if you have any question or issue. </p>
 
-   </p>
+        {% endif %}
+
+    {% else %}
+    <p>This problem hasn't been graded. Wait for an organizer to do so</p>
+    {% endif %}
+
+  
    {% else %}
 
    <p>This problem hasn't been graded. Wait for an organizer to do so</p>
    {% endif %}
 
 
-   {% endif %}
+   
 
     {% if isAdmin %}
     <div id="gradeProblems"> 
