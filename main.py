@@ -1,10 +1,12 @@
+
 from flask import Flask, render_template, request, session, redirect, url_for, abort
+
+#General Utils 
 from functools import wraps
-
 from datetime import datetime
-
 import os
 import requests
+import json
 
 #Google Oauth
 from google_auth_oauthlib.flow import Flow
@@ -16,8 +18,7 @@ from pip._vendor import cachecontrol
 import cloudinary
 import cloudinary.uploader
 
-import json
-
+#For the database
 from database.dbUtils import *
 
 
@@ -42,7 +43,7 @@ with open("secret.json", "r") as f:
 
 
 #login required decorator 
-def login_required(f):
+def loginRequired(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if "email" not in session:
@@ -111,28 +112,40 @@ def callback():
         session["isAdmin"] = True
         return redirect(url_for('adminDashboard'), )
     
-    #See if the user exists in the database. If they do not, they are a student and need to "onboard"
-    elif not does_user_exist(session["email"]):
-        return redirect(url_for('onboard'))
 
+    #See if the user exists in the database. If they do not, they are a student and need to "onboard"
+   
+    elif not Student(session['email']).firstName:
+        return redirect(url_for('onboard'))
 
     return redirect(url_for('dashboard'))
 
 
 @app.route('/onboard', methods=['GET' , 'POST'])
-@login_required
+@loginRequired
 def onboard():
+    
+    #Check if user exist, if so, don't allow them to onboard
+    if Student(session['email']).firstName:
+        return "Sorry, you are already have an account <a href='/'> Return Home</a>"
+
+
     if request.method == 'POST':
         grade = request.form.get('grade')
         house = request.form.get('house')
-        add_student(session["email"], session["firstName"], session["lastName"], grade, house, session['picture'])
+        Student.add(
+        email=session["email"], 
+        firstName=session["firstName"],
+        lastName=session["lastName"], 
+        grade=grade, house=house, 
+        picture=session['picture'])
         return redirect(url_for('dashboard'))
-
+    
     return render_template('onboard.html', firstName=session['firstName'])
 
 
 @app.route('/dashboard')
-@login_required
+@loginRequired
 def dashboard():
  
 
@@ -141,83 +154,92 @@ def dashboard():
         return redirect(url_for('adminDashboard'))
     
 
-
-    active, past = getDashboardProblems(session["email"])
+    s = Student((session["email"]))
+    active, past = s.getDashboardProblems()
     
-    return render_template('dashboard.html', name=session['firstName'], profilePic=session['picture'], activeProblems=active, pastProblems=past, score=getStudentTotalScore(session['email']))
+    
+    return render_template('dashboard.html', 
+            name=session['firstName'], 
+            profilePic=session['picture'], 
+            activeProblems=active, pastProblems=past, 
+            student=s)
 
 
 
 @app.route('/adminDashboard', methods=['GET' , 'POST'])
-@login_required
+@loginRequired
 def adminDashboard():
 
+    #Check they are an Admin
+    if not session["isAdmin"]:
+        return "you can't access this page <a href='/'> Return Home </a>", 403
+
+    #addproblem
     if request.method == "POST":
-        #addproblem
-        if request.form.get("formType") == "addProblem":
-
-            #CDN for the image
+            
+           
+            #Cloudinary for the image
             file = request.files.get("image")
-    
             filename = file.filename.lower()
-
             if filename != "": 
                 if not filename.endswith((".png", ".jpg", ".jpeg")):
                     return "Invalid file type. Only PNG or JPEG allowed.", 400
 
                 result = cloudinary.uploader.upload(file)
                 file = result["secure_url"]
+
             else:
                 file = None
 
-    
-            addProblem(title=request.form.get("title"), text=request.form.get("textbody"), file=file, grades=request.form.getlist("grades"), answer=request.form.get("answer"), pointsIfCorrect=request.form.get("pointsIfCorrect"), deadline=request.form.get("deadline"))
-            ##revise 
-            return redirect(url_for('success', title='Success! The problem has been added'))
+            Problem.add(title=request.form.get("title"), 
+                text=request.form.get("textbody"), 
+                file=file, grades=request.form.getlist("grades"), 
+                answer=request.form.get("answer"), 
+                pointsIfCorrect=request.form.get("pointsIfCorrect"), 
+                deadline=request.form.get("deadline"))
+           
+            return redirect(url_for('success', title='Success! The problem has been added', subtitle=":)"))
            
 
-  
-    sqlProblems = getAllProblems()
-        
-    problems = []
-    for row in sqlProblems:
-        p = dict(row)
-        p["numAnswers"] = getNumAnswers(p["id"])
-        problems.append(p)
-
-
-    return render_template('adminDashboard.html', name=session['firstName'], profilePic=session['picture'], problems=problems)
+    else: # GET request
+        problems = Problem.getAll()
+        return render_template('adminDashboard.html', name=session['firstName'], profilePic=session['picture'], problems=problems)
 
 
 
 @app.route("/problems/<int:probId>", methods=['GET' , 'POST', 'DELETE', 'PATCH'])
+@loginRequired
 def problem(probId):
 
+    #instantiate object
+    prob = Problem(probId)
 
-
+    if prob.title is None:
+        return "This problem does not exist.", 404
+    
+    #Delee Problem
     if request.method == 'DELETE':
         if session['isAdmin']:
-            deleteProblem(probId)
+            prob.delete()
             return redirect(url_for('success', title='Success! The problem has been deleted'), code=303)
         else: 
             abort(403)
 
 
-    prob = getProblem(probId)
-
+    #Change Scores
     if request.method == 'PATCH':
         
         #server side validation
         if session['isAdmin']:
-        
+
             score = request.form.get("score")
 
             try:
                 score = float(score)
                 if score >= 0 and score <= prob['pointsIfCorrect']:
-                    changeScore(score=score, email=request.form.get("email"), probId=probId)
-
-               
+                    prob.changeScore(email=request.form.get("email"), score=score)
+            
+            #the score isn't a number
             except ValueError:
                 abort(400)
                 
@@ -226,73 +248,53 @@ def problem(probId):
             abort(403)
 
 
+    #change endsAt to a more redable format
+    prob.endsAt = prob.endsAt.replace('T', ' at time ')
+
+    return render_template("problems.html", prob=prob, canSubmit=prob.canStudentSubmit(session['email']), isAdmin=session["isAdmin"])
 
 
 
-    studentAnswer = getStudentAnswer(probId, session['email'])
-    if prob is None:
-        return "This problem does not exist.", 404
-
-    # change endsAt to a more redable format
-    endsAt = prob["endsAt"].replace('T', ' at time ')
-
-
-    #check if student can submit (hasn't submitted yet, deadline hasn't passed, correct grade)
-    canSubmit = False
-    if canStudentSubmit(probId, session["email"]) and not session["isAdmin"]:
-        canSubmit = True
-    
-    grades = getGradesProblem(probId)
-
-    active = False
-    if prob["endsAt"] > datetime.now().isoformat(timespec='minutes'):
-        active = True
-
-    return render_template("problems.html", prob=prob, canSubmit=canSubmit, endsAt=endsAt, grades=grades, active=active, isAdmin=session["isAdmin"],   numAnswers=getNumAnswers(probId), studentAnswer=studentAnswer, students=getAllStudentAnswers(probId))
-
-
-@login_required
 @app.route('/problems/<int:probId>/autograde', methods=['POST'])
+@loginRequired
 def gradeProblem(probId):
    
     
-    if request.form.get("autoGrade"):
-        autoGrade(probId)
+    if request.form.get("autoGrade") and session["isAdmin"]:
+        prob = Problem(probId)
+        prob.autoGrade
         return redirect(url_for("success", title='Nice! Problems have been autograded', subtitle=':)'))
        
 
-    
 
-
-
-@login_required
-@app.route('/success')     
-def success():
-    return render_template("success.html", title=request.args.get("title"), subtitle=request.args.get("subtitle"))
-
-
-
-@login_required
-@app.route('/problems/<int:probId>/answer', methods=['POST']) 
+@app.route('/problems/<int:probId>/answer', methods=['POST'])
+@loginRequired 
 def submitProblem(probId):
+
+    prob = Problem(probId)
 
 
     #Check for all to be valid: 
     # 1. problem is active and can students submit it based on their grade
-    if canStudentSubmit(probId, session["email"]):
-        studentSubmit(email=session["email"],  problemId=probId, answer=request.form.get("answer"))
-
+    if prob.canStudentSubmit(session['email']):
+        s = Student(session['email'])
+        s.submit(problemId=probId, answer=request.form.get("answer"))
         return redirect(url_for("success", title='Nice! You have submited your problem', subtitle='Wait a few days for it to be graded and for you to receive your score!'))
     else: 
         return "sorry, something went wrong. You can't submit to this problem", 403
 
 
 
-@login_required
+@app.route('/success')     
+@loginRequired
+def success():
+    return render_template("success.html", title=request.args.get("title"), subtitle=request.args.get("subtitle"))
+
+
 @app.route('/leaderboard')
+@loginRequired
 def leaderboard():
 
-  
     
     r = (request.args.get("grade"))
 

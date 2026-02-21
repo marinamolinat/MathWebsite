@@ -83,7 +83,7 @@
     <div id="top"> 
         <div>
             <h1> Hello {{name}} </h1>
-            <h5>Your current total score is: {{ score }}</h5>
+            <h5>Your current total score is: {{ student.getTotalScore() }}</h5>
 
         </div>
   
@@ -102,7 +102,7 @@
             <ul class="listProblems">
               {% for prob in activeProblems%}
                     <li><a href="/problems/{{prob['id']}}"> {{ prob['title'] }}</a></li>
-                {% endfor %}
+              {% endfor %}
             </ul>
 
          </div>
@@ -120,7 +120,7 @@
                 {% for prob in pastProblems%}
                         <li><a style="display: flex; justify-content: space-between;" href="/problems/{{prob['id']}}"> 
                              <div>{{ prob['title'] }}</div>
-                             <div> {% if prob['scoreReceived'] is not none %} GRADED {% else %} Not Graded {% endif %}</div>
+                             <div> {% if student.getScore(prob.id) is not none %} GRADED {% else %} Not Graded {% endif %}</div>
                         </a></li>
                        
                 {% endfor %}
