@@ -49,7 +49,7 @@ def executeQuery(query, params, returnDict=False):
 
 
 
-#Transactionality
+#For transactional Queries
 def executeQueries(queries):
     connection = sqlite3.connect(dbPath)
     cursor = connection.cursor()
@@ -308,7 +308,7 @@ def isAdmin(email):
     return executeQuery('SELECT * FROM admins WHERE email = ?', (email,)) is not None
 
 #For The leaderboard
-def getLeaderboardInfo(grade=None):
+def getLeaderboardStudents(grade=None):
 
     if grade == None:
 
@@ -341,3 +341,30 @@ def getLeaderboardInfo(grade=None):
     
     return r
 
+def getLeaderboardHouse(grade=None):
+    if grade is None:
+        s = '''
+            SELECT students.house,
+            SUM(studentsAnswers.scoreReceived) AS totalScore
+            FROM students, studentsAnswers
+            WHERE students.email = studentsAnswers.email
+            GROUP BY students.house
+            ORDER BY totalScore DESC
+        '''
+        r = executeQuery(s, (), True)
+    else:
+        s = '''
+            SELECT students.house,
+            SUM(studentsAnswers.scoreReceived) AS totalScore
+            FROM students, studentsAnswers
+            WHERE students.email = studentsAnswers.email
+            AND students.grade = ?
+            GROUP BY students.house
+            ORDER BY totalScore DESC
+        '''
+   
+        r = executeQuery(s, (grade,), True)
+
+    if r is None:
+        r = []
+    return r

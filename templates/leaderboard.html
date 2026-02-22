@@ -21,7 +21,7 @@
 
         #leaderboard ul {
             overflow-y: scroll;
-            height: 70vh;
+            
             padding: 10px;
             background-color: rgba(126, 216, 174, 0.5);
             border-radius: 10px;
@@ -58,7 +58,7 @@
 
        
 
-        <ul> 
+        <ul style="height: 70vh;"> 
         <select class="form-select" name="grade" id="selectGrade">
                 <option value="" selected disabled>
                     Select a grade
@@ -100,6 +100,24 @@
 
         
         {% endfor %}
+
+        </ul>
+        
+
+        <h3> House's Ranking</h3>
+        <ul>
+            
+            
+            {% for h in houses %}
+            <li> 
+                
+                {{h['house']}}'s Score: {{h['totalScore']}}
+
+
+                
+            </li>
+            {% endfor %}
+            
 
         </ul>
 

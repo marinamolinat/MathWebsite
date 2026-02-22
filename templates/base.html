@@ -30,24 +30,31 @@
             display: flex;
             flex-direction: column;
             list-style-type: none;
+            overflow-y: auto;
+            flex-grow: 1;
+            flex-basis: 0;
+
         }
 
         
         nav {
-       padding: 10px;
-    font-weight: 800;
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    background-color: #eff0dc;
-    border-radius: 5px;
+            width: 8%;
+            padding: 10px;
+            font-weight: 800;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            background-color: #eff0dc;
+            position: fixed;
 
         }
 
         #content {
+            margin-left: 8%;
             display: flex;
             flex-direction: column;
-            width: 100%;
+    
+            width: 90%;
             height: 100%;
          
             padding: 3%;
@@ -77,6 +84,8 @@
     <li><a href="/logout">Logout</a></li>
     </ul>
    </nav>
+
+
    <div id="content"> 
     {% block content %}
 

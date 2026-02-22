@@ -304,7 +304,7 @@ def leaderboard():
     else: 
         r = None
 
-    return render_template('leaderboard.html', students=getLeaderboardInfo(r))
+    return render_template('leaderboard.html', students=getLeaderboardStudents(r), houses=getLeaderboardHouse(r))
 
 
 @app.route('/logout')
