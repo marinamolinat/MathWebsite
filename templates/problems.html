@@ -108,33 +108,33 @@
    </div>
    
    {% if active %}
-        <p>This problem is active until {{ endsAt }} </p>
+        <p>This problem is active until {{ prob.endsAt }} </p>
    {% else %}
-     <p>This problem has ended at {{ endsAt }} </p>
+     <p>This problem ended: {{ prob.endsAt }} </p>
 
    {% endif %}
 
    <p> This problem is for the following grades:
-   {% for i in grades %}
+   {% for i in prob.grades() %}
      {{ i }}{% if not loop.last %}, {% endif %}
    {% endfor %}
    </p>
 
 
 
-    {% if prob['imageURL'] is not none %}
+    {% if prob.image is not none %}
    <div id="imgContainer">
 
-    <img src="{{ prob['imageURL'] }}"/>
+    <img src="{{ prob.image }}"/>
 
    </div>
    {% endif %}
 
-   <p> {{ prob["textBody"] }}  </p>
+   <p> {{ prob.text }}  </p>
 
-   {% if canSubmit %}
+   {% if prob.canStudentSubmit(student.email) and not isAdmin %}
 
-   <form method="post" action="/problems/{{ prob['id'] }}/answer">
+   <form method="post" action="/problems/{{ prob.probId }}/answer">
     <label for="inputAnswer">Please input your answer. Do so to 3 decimal places. Do not write anything else, only the answer</label>
     <input required type="text" id="inputAnswer" name="answer">
 
@@ -151,20 +151,22 @@
 
    {% endif %}
 
-   {% if studentAnswer is not none %}
-   <p>You have answered this problem with: {{ studentAnswer['answer']}}</p>
 
 
-    {% if studentAnswer['scoreReceived'] is not none %}
+   {% if student.getResponse(prob.probId) is not none %}
+   <p>You have answered this problem with: {{ student.getResponse(prob.probId) }}</p>
 
-        {% if studentAnswer['scoreReceived'] == prob[" pointsIfCorrect"] %}
-        <p>Congrats! Your answer was correct. You received the maximum amount of points: {{studentAnswer['scoreReceived']}}</p>
+
+    {% if student.getScore(prob.probId) is not none %}
+
+        {% if student.getScore(prob.probId) == prob.pointsIfCorrect %}
+        <p>Congrats! Your answer was correct. You received the maximum amount of points: {{student.getScore(prob.probId)}}</p>
     
-        {% elif studentAnswer['scoreReceived'] > 0  %}
-         <p>This problem has been graded. You received partial points: {{studentAnswer['scoreReceived']}}</p>
+        {% elif student.getScore(prob.probId) > 0  %}
+         <p>This problem has been graded. You received partial points: {{student.getScore(prob.probId)}}</p>
        
          {% else %}
-         <p>This problem has been graded. You have received a score of {{studentAnswer['scoreReceived']}}. Your answer wasn't correct. Contact the organizers if you have any question or issue. </p>
+         <p>This problem has been graded. You have received a score of {{student.getScore(prob.probId)}}. Your answer wasn't correct. Contact the organizers if you have any question or issue. </p>
 
         {% endif %}
 
@@ -173,14 +175,11 @@
     {% endif %}
 
   
-   {% else %}
-
-   <p>This problem hasn't been graded. Wait for an organizer to do so</p>
+   
    {% endif %}
 
 
    
-
     {% if isAdmin %}
     <div id="gradeProblems"> 
 
@@ -196,7 +195,7 @@
             </p>
             <p> 
 
-                If correct, {{ prob["pointsIfCorrect"] }} points will be awarded 
+                If correct, {{ prob.pointsIfCorrect }} points will be awarded 
             </p>
             <button onclick="autoGrade()" class="btn btn-warning">Click here to autograde all answers</button>
 
@@ -210,7 +209,9 @@
         <h5>List of students that have answered</h5>
 
         <ul> 
-            {% for s in students %}
+
+          {% if prob.getAllStudentAnswers() is not none %}  
+            {% for s in prob.getAllStudentAnswers() %}
             <li>  <p>{{ s['firstName'] }} {{ s['firstLastName'] }} </p>
                 
                 <p> Student Answer: {{ s['answer'] }}  </p>
@@ -228,6 +229,7 @@
 
 
             {% endfor %}
+         {% endif %}
 
 
 
@@ -245,7 +247,7 @@
     {
         if (confirm("Are you sure you want to automatically grade all problems with the answer {{ prob['correctAnswer'] }}? This action cannot be undone")) {
            
-            fetch("/problems/{{ prob['id'] }}/autograde", {
+            fetch("/problems/{{ prob.probId}}/autograde", {
                 method: "POST",
                 body: new URLSearchParams({ autoGrade: "true" })
             })
@@ -266,7 +268,7 @@
     {
           if (confirm("Are you sure you want to delete this problem? This action cannot be undone. It will also delete the score received by students from this problem.")) {
            
-            fetch("/problems/{{ prob['id'] }}", {
+            fetch("/problems/{{ prob.probId }}", {
                 method: "DELETE"
       
             })
@@ -296,7 +298,7 @@
         }
         else {
 
-            fetch("/problems/{{ prob['id'] }}", {
+            fetch("/problems/{{prob.probId}}", {
                 method: "PATCH",
                 body: new URLSearchParams({ score: num, email: email})
       

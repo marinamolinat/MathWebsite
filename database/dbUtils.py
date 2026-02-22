@@ -75,8 +75,7 @@ class Student():
     def __init__(self, email):
 
         data = executeQuery('''
-        SELECT users.firstName, users.firstLastName, users.profilePicURL, 
-        students.grade, students.house
+        SELECT firstName, firstLastName, profilePicURL, grade, house
         FROM users, students
         WHERE users.email = students.email
         AND users.email = ?
@@ -119,12 +118,12 @@ class Student():
 
          '''
         r = executeQuery(s, (self.email, ))
-        if r:
-            return r
+        if r is not None:
+            return r[0][0]
         else:
             return 0
     
-    def canStudentSubmit(self, probId, email):
+    def canStudentSubmit(self, probId):
         r = executeQuery('''
             SELECT 1
             FROM mathProblems, mathProblemsGrades
@@ -166,6 +165,10 @@ class Student():
         '''
         past = executeQuery(s, (self.email,), True)
 
+        if past is None:
+            past = []
+        if active is None:
+            active = []
 
         return active, past
     def getScore(self, probId):
@@ -174,14 +177,20 @@ class Student():
         WHERE problemId = ?
         AND email = ?
         '''
-        return executeQuery(r, (probId, self.email))
+        r = executeQuery(r, (probId, self.email))
+        if r is not None:
+            r = r[0][0]
+        return r
+        
     
     def submit(self, problemId, answer):
         executeQuery("INSERT INTO studentsAnswers (problemId, email, answer) VALUES (?, ?, ?)", (problemId, self.email, answer))
     
     def getResponse(self, problemId):
-        return executeQuery("SELECT * FROM studentsAnswers WHERE problemId = ? AND email = ?", (problemId, self.email), True)
-    
+        r = executeQuery("SELECT answer FROM studentsAnswers WHERE problemId = ? AND email = ?", (problemId, self.email), True)
+        if r is not None:
+            r = r[0][0]
+        return r
 
 class Problem():
     def __init__(self, probId):
@@ -190,13 +199,10 @@ class Problem():
             self.title = data[0]["title"] if data else None
             self.text = data[0]["textBody"] if data else None
             self.image = data[0]["imageURL"] if data else None
-            self.answer = data[0]["correctAnswer"] if data else None
-            self.points = data[0]["pointsIfCorrect"] if data else None
+            self.correctAnswer = data[0]["correctAnswer"] if data else None
+            self.pointsIfCorrect = data[0]["pointsIfCorrect"] if data else None
             self.endsAt = data[0]["endsAt"] if data else None
 
-
-    def data(self):
-        return self._data
 
     def isActive(self):
         if not self._data:
@@ -217,7 +223,7 @@ class Problem():
             (self.probId,)
         )[0][0]
 
-    def allStudentAnswers(self):
+    def getAllStudentAnswers(self):
         return executeQuery('''
             SELECT firstName, firstLastName, answer, scoreReceived, students.email
             FROM studentsAnswers, students, users
@@ -254,7 +260,7 @@ class Problem():
     def delete(self):
         executeQuery("DELETE FROM mathProblems WHERE id = ?", (self.probId,))
 
-    def autograde(self):
+    def autoGrade(self):
         executeQuery('''
             UPDATE studentsAnswers
             SET scoreReceived = CASE
@@ -288,10 +294,10 @@ class Problem():
             mathProblems.id,
             mathProblems.title,
             COUNT(studentsAnswers.email) AS numAnswers
-            FROM mathProblems, studentsAnswers
-            WHERE mathProblems.id = studentsAnswers.problemId
+            FROM mathProblems
+            LEFT JOIN studentsAnswers ON mathProblems.id = studentsAnswers.problemId
             GROUP BY mathProblems.id, mathProblems.title
-            
+                
         '''
         return executeQuery(s, (), True)
     
@@ -330,6 +336,8 @@ def getLeaderboardInfo(grade=None):
             '''
         r = executeQuery(s, (grade,), True)
     
-
+    if r is None:
+        r = []
+    
     return r
 

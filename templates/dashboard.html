@@ -120,7 +120,7 @@
                 {% for prob in pastProblems%}
                         <li><a style="display: flex; justify-content: space-between;" href="/problems/{{prob['id']}}"> 
                              <div>{{ prob['title'] }}</div>
-                             <div> {% if student.getScore(prob.id) is not none %} GRADED {% else %} Not Graded {% endif %}</div>
+                             <div> {% if student.getScore(prob['id']) is not none %} GRADED {% else %} Not Graded {% endif %}</div>
                         </a></li>
                        
                 {% endfor %}

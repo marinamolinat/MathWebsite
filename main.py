@@ -213,6 +213,7 @@ def problem(probId):
 
     #instantiate object
     prob = Problem(probId)
+    student = Student(session['email'])
 
     if prob.title is None:
         return "This problem does not exist.", 404
@@ -236,7 +237,7 @@ def problem(probId):
 
             try:
                 score = float(score)
-                if score >= 0 and score <= prob['pointsIfCorrect']:
+                if score >= 0 and score <= prob.pointsIfCorrect:
                     prob.changeScore(email=request.form.get("email"), score=score)
             
             #the score isn't a number
@@ -251,7 +252,7 @@ def problem(probId):
     #change endsAt to a more redable format
     prob.endsAt = prob.endsAt.replace('T', ' at time ')
 
-    return render_template("problems.html", prob=prob, canSubmit=prob.canStudentSubmit(session['email']), isAdmin=session["isAdmin"])
+    return render_template("problems.html", prob=prob,isAdmin=session["isAdmin"], student=student)
 
 
 
@@ -262,14 +263,14 @@ def gradeProblem(probId):
     
     if request.form.get("autoGrade") and session["isAdmin"]:
         prob = Problem(probId)
-        prob.autoGrade
+        prob.autoGrade()
         return redirect(url_for("success", title='Nice! Problems have been autograded', subtitle=':)'))
        
 
 
 @app.route('/problems/<int:probId>/answer', methods=['POST'])
 @loginRequired 
-def submitProblem(probId):
+def submitToProblem(probId):
 
     prob = Problem(probId)
 
@@ -303,7 +304,7 @@ def leaderboard():
     else: 
         r = None
 
-    return render_template('leaderboard.html', name=session['firstName'], students=getLeaderboardInfo(r))
+    return render_template('leaderboard.html', students=getLeaderboardInfo(r))
 
 
 @app.route('/logout')
