@@ -10,15 +10,7 @@ dbPath = os.path.join(BASE_DIR, "database.db")
 
 
 
-#Database functions
-def init_db():
-    connection = sqlite3.connect(dbPath)
 
-    with open(schemaPath) as f:
-        connection.executescript(f.read())
-    
-    connection.commit()
-    connection.close()
 
 
 #returnDict --> if you want to return a dictionary instead of a list
@@ -31,6 +23,7 @@ def executeQuery(query, params, returnDict=False):
     
     try:
         cursor = connection.cursor() 
+        cursor.execute("PRAGMA foreign_keys = ON")
         cursor.execute(query, params)
         result = cursor.fetchall()
         connection.commit()
@@ -42,7 +35,7 @@ def executeQuery(query, params, returnDict=False):
     finally:
         connection.close() 
     
-    if result == []:
+    if result == [] or result == [()]:
         return None
 
     return result
@@ -258,7 +251,7 @@ class Problem():
         executeQuery(r, (score, self.probId, email))
 
     def delete(self):
-        executeQuery("DELETE FROM mathProblems WHERE id = ?", (self.probId,))
+        executeQuery(" DELETE FROM mathProblems WHERE id = ?", (self.probId,))
 
     def autoGrade(self):
         executeQuery('''

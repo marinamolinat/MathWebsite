@@ -203,8 +203,6 @@
 
 
 
-
-
     <div class="container">
         <h5>List of students that have answered</h5>
 
@@ -274,7 +272,7 @@
             })
             .then(response => {
             if (response.redirected) {
-                // Redirige manualmente a la URL enviada por Flask
+            
                 window.location.href = response.url;
             }
         })
@@ -286,31 +284,30 @@
     function changeScore(email)  {
         let num = prompt("Enter the new score you wish to assign to the student:");
 
-        if (isNaN(num))
+        if (isNaN(num)) //if its not a number
         {
             alert("Sorry, thats not a number. Try again")
 
         }
-
-        else if (num > {{ prob["pointsIfCorrect"] }} || num < 0 )
+        else if (num > {{ prob["pointsIfCorrect"] }} || num < 0 ) //if its not within bounds
         {
             alert("Please input a number between 0 and the maximum score for this question, {{ prob['pointsIfCorrect'] }} ")
         }
         else {
 
-            fetch("/problems/{{prob.probId}}", {
+            fetch("/problems/{{prob.probId}}", { //sends PATCH request
                 method: "PATCH",
                 body: new URLSearchParams({ score: num, email: email})
       
             })
             .then(response => {
-                location.reload();
+            if (response.ok) {
+        location.reload();   
+            }
+                
 
-            })
-            
-
+            }) 
         }
-
     }
 
 
@@ -329,4 +326,3 @@
 
 
 {% endblock %}
-

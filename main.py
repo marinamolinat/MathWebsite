@@ -29,6 +29,10 @@ os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 SCOPE = ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"]
 flow = Flow.from_client_secrets_file(client_secrets_file="secret.json", scopes=SCOPE, redirect_uri="http://127.0.0.1:8000/callback")
 
+
+
+
+
 with open("secret.json", "r") as f:
     data = json.load(f)
     GOOGLE_CLIENT_ID = data["web"]["client_id"]
@@ -40,6 +44,10 @@ with open("secret.json", "r") as f:
     flaskSecret = data['flask']['secret']
 
     
+
+
+
+
 
 
 #login required decorator 
@@ -54,6 +62,13 @@ def loginRequired(f):
 
 app = Flask(__name__)
 app.secret_key = flaskSecret
+
+
+
+#Internal server error handling 
+@app.errorhandler(500)
+def internalError(error):
+    return "An internal server error occured. <a href='/'> Return home </a>", 500
 
 
 #Routes
@@ -148,7 +163,6 @@ def onboard():
 @loginRequired
 def dashboard():
  
-
     #if admin
     if session["isAdmin"]:
         return redirect(url_for('adminDashboard'))
@@ -169,7 +183,7 @@ def dashboard():
 @app.route('/adminDashboard', methods=['GET' , 'POST'])
 @loginRequired
 def adminDashboard():
-
+    
     #Check they are an Admin
     if not session["isAdmin"]:
         return "you can't access this page <a href='/'> Return Home </a>", 403
@@ -177,7 +191,6 @@ def adminDashboard():
     #addproblem
     if request.method == "POST":
             
-           
             #Cloudinary for the image
             file = request.files.get("image")
             filename = file.filename.lower()
@@ -213,13 +226,15 @@ def problem(probId):
 
     #instantiate object
     prob = Problem(probId)
-    student = Student(session['email'])
+    student = Student(session['email']) #if admin, this will return an object with none atrributes
 
     if prob.title is None:
         return "This problem does not exist.", 404
     
-    #Delee Problem
+    #Delete Problem
     if request.method == 'DELETE':
+
+        #Validation 
         if session['isAdmin']:
             prob.delete()
             return redirect(url_for('success', title='Success! The problem has been deleted'), code=303)
@@ -313,6 +328,6 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == "__main__":
-    init_db()
-    app.run(host="127.0.0.1", port=8000, debug=True)
+
+    app.run(host="127.0.0.1", port=8000, debug=False)
 

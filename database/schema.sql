@@ -1,3 +1,5 @@
+
+
 CREATE TABLE IF NOT EXISTS users (
     email TEXT PRIMARY KEY,
     firstName TEXT NOT NULL, 
@@ -46,5 +48,6 @@ CREATE TABLE IF NOT EXISTS studentsAnswers(
     PRIMARY KEY (problemId, email),
     FOREIGN KEY (problemId) REFERENCES mathProblems(id) ON DELETE CASCADE
 );
+
 
 

@@ -161,7 +161,7 @@
       </div>
       <div class="modal-body">
 
-        <form method="post"  enctype="multipart/form-data">
+        <form method="post"  enctype="multipart/form-data" onsubmit="return validateForm()">
 
 
             <label for="title">Title</label>
@@ -189,24 +189,18 @@
 
            
           
-            <label for="answer">Correct Answer, this is for autograding</label>
+            <label required for="answer">Correct Answer, this is for autograding</label>
             <input id="answer" type="text" name="answer">
 
             <label for="maxPoints">If a student gets this answer correct, how many points should be given.</label>
-            <input id="maxPoints" type="number" name="pointsIfCorrect">
+            <input id="maxPoints" required type="number" name="pointsIfCorrect">
             
             
 
 
 
             <label for="deadline">Select a deadline</label>
-            <input required id="deadline" type="datetime-local" name="deadline">
-
-     
-
-
-
-
+            <input required id="deadline" required type="datetime-local" name="deadline">
 
 
 
@@ -214,7 +208,7 @@
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="submit" class="btn btn-primary" name="formType" value="addProblem">Save changes</button>
+            <button type="submit" class="btn btn-primary" name="formType" value="addProblem">Add problem</button>
         </div>
 
 
@@ -223,6 +217,31 @@
   </div>
 </div>
 
+<script>
+    function validateForm() {
+        console.log("NOT NOW ")
+        const fileInput = document.getElementById('fileInput');
+        const checkboxes = document.querySelectorAll('input[name="grades"]:checked');
+
+        if (fileInput.files.length > 0) {
+            const fileName = fileInput.files[0].name.toLowerCase();
+            const extension = fileName.split('.').pop();
+            if (!['jpg', 'jpeg', 'png'].includes(extension)) {
+                alert('Only .jpg, .jpeg, or .png image files are allowed');
+                return false;
+            }
+        }
+
+        if (checkboxes.length === 0) {
+            alert('Please select at least one grade');
+            return false;
+        }
+
+        return true;
+    }
+
+
+</script>
 
 {% endblock %}
 
