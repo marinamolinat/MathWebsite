@@ -162,8 +162,6 @@
       <div class="modal-body">
 
         <form method="post"  enctype="multipart/form-data" onsubmit="return validateForm()">
-
-
             <label for="title">Title</label>
             <input required type="text" id="title" name="title">
 
@@ -219,28 +217,28 @@
 
 <script>
     function validateForm() {
-        console.log("NOT NOW ")
         const fileInput = document.getElementById('fileInput');
         const checkboxes = document.querySelectorAll('input[name="grades"]:checked');
 
+        //checks if file is uploaded
         if (fileInput.files.length > 0) {
+
+            
             const fileName = fileInput.files[0].name.toLowerCase();
             const extension = fileName.split('.').pop();
-            if (!['jpg', 'jpeg', 'png'].includes(extension)) {
+
+            if (!['jpg', 'jpeg', 'png'].includes(extension)) { //checks if extension is valid
                 alert('Only .jpg, .jpeg, or .png image files are allowed');
                 return false;
             }
         }
-
+        //checks if atleast one grade is selected
         if (checkboxes.length === 0) {
             alert('Please select at least one grade');
             return false;
         }
-
         return true;
     }
-
-
 </script>
 
 {% endblock %}

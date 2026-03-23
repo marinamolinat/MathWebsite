@@ -4,16 +4,11 @@ from datetime import datetime
 
 
 
-BASE_DIR = os.path.dirname(__file__)
-schemaPath = os.path.join(BASE_DIR, "schema.sql")
-dbPath = os.path.join(BASE_DIR, "database.db")
+#Absolute paths 
+baseDir = os.path.dirname(__file__)
+dbPath = os.path.join(baseDir, "database.db")
 
-
-
-
-
-
-#returnDict --> if you want to return a dictionary instead of a list
+#returnDict --> if you want to return a dictionary instead of a tuple
 def executeQuery(query, params, returnDict=False):
 
     connection = sqlite3.connect(dbPath, timeout=5)
@@ -23,7 +18,7 @@ def executeQuery(query, params, returnDict=False):
     
     try:
         cursor = connection.cursor() 
-        cursor.execute("PRAGMA foreign_keys = ON")
+        cursor.execute("PRAGMA foreign_keys = ON") #For delete on cascade
         cursor.execute(query, params)
         result = cursor.fetchall()
         connection.commit()
@@ -35,31 +30,31 @@ def executeQuery(query, params, returnDict=False):
     finally:
         connection.close() 
     
-    if result == [] or result == [()]:
+    if result == [] or result == [()]: #Instead of returning empty list or tuples, it returns None
         return None
 
     return result
 
 
 
-#For transactional Queries
-def executeQueries(queries):
+#For transactional queries
+def executeQueries(queries): #parameter queries is a list of tuples
     connection = sqlite3.connect(dbPath)
     cursor = connection.cursor()
-    result = []
+
     try:
         for query, params in queries:
             cursor.execute(query, params)
-            r = cursor.fetchall()
-            result.append(r)
+
         connection.commit()
+    
     except Exception as e:
         connection.rollback()
         print(f"ERROR: {e}")
         raise
     finally:
         connection.close()
-    return result
+
 
 
 
@@ -83,14 +78,16 @@ class Student():
 
     @staticmethod
     def add(email, firstName, lastName, grade, house, picture):
-        lastNames = lastName.split(" ")
+
+        lastNames = lastName.split(" ") #Checks if they have a second last name (most do, some do not)
         queryList = []
-        if len(lastNames) == 1:
+
+        if len(lastNames) == 1: #only one last name
             queryList.append((
                 'INSERT INTO users (email, firstName, firstLastName, profilePicURL) VALUES (?, ?, ?, ?)',
                 (email, firstName, lastNames[0], picture)
             ))
-        else:
+        else: #two last names
             queryList.append((
                 'INSERT INTO users (email, firstName, firstLastName, secondLastName, profilePicURL) VALUES (?, ?, ?, ?, ?)',
                 (email, firstName, lastNames[0], lastNames[1], picture)
@@ -111,27 +108,25 @@ class Student():
 
          '''
         r = executeQuery(s, (self.email, ))
+
         if r is not None:
-            return r[0][0]
+            return r[0][0] #If its not none, it returns the total score (as its a list of a tuple I used indexes)
         else:
-            return 0
+            return 0 #else, return 0 if they haven't submitted any problems yet
     
-    def canStudentSubmit(self, probId):
-        r = executeQuery('''
-            SELECT 1
-            FROM mathProblems, mathProblemsGrades
-            WHERE mathProblems.id = mathProblemsGrades.problemId
-            AND mathProblems.id = ?
-            AND mathProblemsGrades.grade = ?
-            AND mathProblems.endsAt >= ?
-            AND NOT EXISTS (
-                SELECT 1 FROM studentsAnswers 
-                WHERE problemId = ? AND email = ?
-            )
-        ''', (probId, self.grade, datetime.now().isoformat(timespec='minutes'), probId, self.email))
+
+    def submit(self, problemId, answer): #student submits an answer to a problem
+        executeQuery("INSERT INTO studentsAnswers (problemId, email, answer) VALUES (?, ?, ?)", (problemId, self.email, answer))
     
-        return r is not None
+    def getResponse(self, problemId): #get answer to a spefic problem
+        r = executeQuery("SELECT answer FROM studentsAnswers WHERE problemId = ? AND email = ?", (problemId, self.email), True)
+
+        if r is not None:
+            r = r[0][0] #again, indexes are used as a tuple inside a list is returned by executeQuery
+        return r
+
     
+
     #Get active problems, taking into account the grade of the student. Returns a list where index 0 represents a list of active problems, and index 1 a list inactive
     def getDashboardProblems(self):
         
@@ -152,18 +147,30 @@ class Student():
         SELECT title, id, scoreReceived FROM studentsAnswers, mathProblems
         WHERE studentsAnswers.problemId = mathProblems.id
         AND studentsAnswers.email = ?
-    
-
-
         '''
         past = executeQuery(s, (self.email,), True)
 
         if past is None:
-            past = []
+            past = [] #must be a list because Jinja iterated over this return 
         if active is None:
-            active = []
-
+            active = []  #must be a list because Jinja iterated over this return 
         return active, past
+    
+    def canStudentSubmit(self, probId):
+        r = executeQuery('''
+            SELECT 1
+            FROM mathProblems, mathProblemsGrades
+            WHERE mathProblems.id = mathProblemsGrades.problemId
+            AND mathProblems.id = ?
+            AND mathProblemsGrades.grade = ?
+            AND mathProblems.endsAt >= ?
+            AND NOT EXISTS (
+                SELECT 1 FROM studentsAnswers 
+                WHERE problemId = ? AND email = ?
+            )
+        ''', (probId, self.grade, datetime.now().isoformat(timespec='minutes'), probId, self.email))
+    
+        return r is not None
     def getScore(self, probId):
         r = '''
         SELECT scoreReceived FROM studentsAnswers
@@ -176,15 +183,7 @@ class Student():
         return r
         
     
-    def submit(self, problemId, answer):
-        executeQuery("INSERT INTO studentsAnswers (problemId, email, answer) VALUES (?, ?, ?)", (problemId, self.email, answer))
-    
-    def getResponse(self, problemId):
-        r = executeQuery("SELECT answer FROM studentsAnswers WHERE problemId = ? AND email = ?", (problemId, self.email), True)
-        if r is not None:
-            r = r[0][0]
-        return r
-
+  
 class Problem():
     def __init__(self, probId):
             self.probId = probId
@@ -195,6 +194,43 @@ class Problem():
             self.correctAnswer = data[0]["correctAnswer"] if data else None
             self.pointsIfCorrect = data[0]["pointsIfCorrect"] if data else None
             self.endsAt = data[0]["endsAt"] if data else None
+
+
+    @staticmethod
+    def getAll():
+        s = '''
+            SELECT 
+            mathProblems.id,
+            mathProblems.title,
+            COUNT(studentsAnswers.email) AS numAnswers
+            FROM mathProblems
+            LEFT JOIN studentsAnswers ON mathProblems.id = studentsAnswers.problemId
+            GROUP BY mathProblems.id, mathProblems.title
+                
+        '''
+        r = executeQuery(s, (), True)
+        if r is None: 
+            r = []
+
+        return r
+    
+
+
+
+
+    @staticmethod
+    def add(title, text, file, grades, answer, pointsIfCorrect, deadline):
+        connection = sqlite3.connect(dbPath)
+        cursor = connection.cursor()
+        cursor.execute(
+            "INSERT INTO mathProblems (title, textBody, imageURL, correctAnswer, pointsIfCorrect, endsAt) VALUES (?, ?, ?, ?, ?, ?)",
+            (title, text, file, answer, pointsIfCorrect, deadline)
+        )
+        problemId = cursor.lastrowid
+        for g in grades:
+            cursor.execute("INSERT INTO mathProblemsGrades (problemId, grade) VALUES (?, ?)", (problemId, g))
+        connection.commit()
+        connection.close()
 
 
     def isActive(self):
@@ -208,15 +244,15 @@ class Problem():
         for row in r:
             grades.append(row[0])
 
-        return grades
+        return grades #Rreturns a list of ints (the grades)
 
-    def numAnswers(self):
+    def numAnswers(self):  #Number of answeres of a problem
         return executeQuery(
             "SELECT COUNT(*) FROM studentsAnswers WHERE problemId = ?",
             (self.probId,)
         )[0][0]
 
-    def getAllStudentAnswers(self):
+    def getAllStudentAnswers(self): #returns a list of dictionaries for all student answers to the problem
         return executeQuery('''
             SELECT firstName, firstLastName, answer, scoreReceived, students.email
             FROM studentsAnswers, students, users
@@ -227,7 +263,7 @@ class Problem():
 
     def canStudentSubmit(self, email):
         r = '''
-             SELECT *
+             SELECT 1
             FROM mathProblems, mathProblemsGrades, students
             WHERE mathProblems.id = mathProblemsGrades.problemId
             AND mathProblemsGrades.grade = students.grade
@@ -240,9 +276,9 @@ class Problem():
             )
         '''
         result = executeQuery(r, (email, self.probId, datetime.now().isoformat(timespec='minutes'), self.probId, email))
-        return result is not None
+        return result is not None #If its not None, return True, otherwise, return False 
     
-    def changeScore(self, email, score):
+    def changeScore(self, email, score): #Change score of student
         r = '''
             UPDATE studentsAnswers
             SET scoreReceived = ?
@@ -264,35 +300,7 @@ class Problem():
             WHERE problemId = ?;
         ''', (self.probId,))
 
-    @staticmethod
-    def add(title, text, file, grades, answer, pointsIfCorrect, deadline):
-        if answer == "":
-            answer = None
-        connection = sqlite3.connect(dbPath)
-        cursor = connection.cursor()
-        cursor.execute(
-            "INSERT INTO mathProblems (title, textBody, imageURL, correctAnswer, pointsIfCorrect, endsAt) VALUES (?, ?, ?, ?, ?, ?)",
-            (title, text, file, answer, pointsIfCorrect, deadline)
-        )
-        problemId = cursor.lastrowid
-        for g in grades:
-            cursor.execute("INSERT INTO mathProblemsGrades (problemId, grade) VALUES (?, ?)", (problemId, g))
-        connection.commit()
-        connection.close()
 
-    @staticmethod
-    def getAll():
-        s = '''
-            SELECT 
-            mathProblems.id,
-            mathProblems.title,
-            COUNT(studentsAnswers.email) AS numAnswers
-            FROM mathProblems
-            LEFT JOIN studentsAnswers ON mathProblems.id = studentsAnswers.problemId
-            GROUP BY mathProblems.id, mathProblems.title
-                
-        '''
-        return executeQuery(s, (), True)
     
 
 

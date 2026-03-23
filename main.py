@@ -220,10 +220,9 @@ def adminDashboard():
 
 
 
-@app.route("/problems/<int:probId>", methods=['GET' , 'POST', 'DELETE', 'PATCH'])
+@app.route("/problems/<int:probId>", methods=['GET' , 'DELETE', 'PATCH'])
 @loginRequired
 def problem(probId):
-
     #instantiate object
     prob = Problem(probId)
     student = Student(session['email']) #if admin, this will return an object with none atrributes
@@ -241,15 +240,11 @@ def problem(probId):
         else: 
             abort(403)
 
-
     #Change Scores
-    if request.method == 'PATCH':
-        
+    if request.method == 'PATCH':    
         #server side validation
         if session['isAdmin']:
-
             score = request.form.get("score")
-
             try:
                 score = float(score)
                 if score >= 0 and score <= prob.pointsIfCorrect:
@@ -257,16 +252,12 @@ def problem(probId):
             
             #the score isn't a number
             except ValueError:
-                abort(400)
-                
-               
+                abort(400)                     
         else: 
             abort(403)
-
-
-    #change endsAt to a more redable format
-    prob.endsAt = prob.endsAt.replace('T', ' at time ')
-
+    
+    #Otherwise, must be a GET request
+    prob.endsAt = prob.endsAt.replace('T', ' at time ')  #change endsAt to a more redable format
     return render_template("problems.html", prob=prob,isAdmin=session["isAdmin"], student=student)
 
 
@@ -303,7 +294,7 @@ def submitToProblem(probId):
 
 @app.route('/success')     
 @loginRequired
-def success():
+def success(): #Used to display a success message 
     return render_template("success.html", title=request.args.get("title"), subtitle=request.args.get("subtitle"))
 
 
@@ -314,7 +305,7 @@ def leaderboard():
     
     r = (request.args.get("grade"))
 
-    if r in ['5', '6', '7', '8', '9', '10', '11']:
+    if r in ['5', '6', '7', '8', '9', '10', '11']: #Checks if a grade is selected
         r = int(r)
     else: 
         r = None
