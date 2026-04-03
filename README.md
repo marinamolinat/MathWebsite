@@ -13,10 +13,9 @@ In the website, users can have two roles: either they are students or organizers
 It's a simple Flask application. The /database directory includes the database, and a python module (dbUtils.py) that has classes (Student and Problem) that manage queries to the database. I'm aware that using OOP was kinda extra, but oh well, it works ig. 
 
 ### Some illustrations of how the database works 
+<img src="https://cdn.hackclub.com/019d50a1-c2c1-7f93-9950-44f0da1b0f41/image.png" width="600">
 
-<img src="https://cdn.hackclub.com/019d50a1-c2c1-7f93-9950-44f0da1b0f41/image.png">
-
-<img src="https://cdn.hackclub.com/019d50a2-a2be-73d6-96d4-663cdc45559a/image.png">
+<img src="https://cdn.hackclub.com/019d50a2-a2be-73d6-96d4-663cdc45559a/image.png" width="600">
 
 ### Example of how problems are added by organizers
 See the video <a href="https://user-cdn.hackclub-assets.com/019d5091-dfb5-7ab4-abd9-aa46cec7b720/screen_recording_2026-04-02_at_6.24.12___pm.mp4" target="_blank"> here </a>
